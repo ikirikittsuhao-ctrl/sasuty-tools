@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Scanner</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        .drop-zone {
+            border: 2px dashed var(--border-color);
+            border-radius: 6px;
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            color: var(--text-sub);
+            font-size: 0.9rem;
+            transition: border-color 0.2s, color 0.2s;
+        }
+        .drop-zone:hover, .drop-zone.dragover {
+            border-color: var(--accent-color);
+            color: var(--text-main);
+        }
+        .file-input {
+            display: none;
+        }
+        .scan-result-text {
+            width: 100%;
+            font-family: monospace;
+            background-color: var(--bg-color);
+            resize: vertical;
+            min-height: 80px;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1 class="tool-title">QR Code Scanner</h1>
+            <a href="/" class="back-link">戻る</a>
+        </header>
+
+        <main class="main-panel">
+            <div class="form-group">
+                <div id="dropZone" class="drop-zone">
+                    画像をここにドラッグ＆ドロップ、またはクリックして選択
+                </div>
+                <input type="file" id="fileInput" class="file-input" accept="image/*">
+            </div>
+
+            <div id="resultArea" class="result-area hidden">
+                <label for="resultText">解析結果</label>
+                <textarea id="resultText" class="scan-result-text" readonly></textarea>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const dropZone = document.getElementById('dropZone');
+            const fileInput = document.getElementById('fileInput');
+            const resultArea = document.getElementById('resultArea');
+            const resultText = document.getElementById('resultText');
+
+            dropZone.addEventListener('click', () => fileInput.click());
+
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.classList.add('dragover');
+            });
+
+            dropZone.addEventListener('dragleave', () => {
+                dropZone.classList.remove('dragover');
+            });
+
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('dragover');
+                if (e.dataTransfer.files.length > 0) {
+                    processFile(e.dataTransfer.files[0]);
+                }
+            });
+
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    processFile(e.target.files[0]);
+                }
+            });
+
+            function processFile(file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const img = new Image();
+                    img.onload = function() {
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                        ctx.drawImage(img, 0, 0, img.width, img.height);
+                        
+                        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                        const code = jsQR(imageData.data, imageData.width, imageData.height);
+
+                        resultArea.classList.remove('hidden');
+                        if (code) {
+                            resultText.value = code.data;
+                        } else {
+                            resultText.value = 'QRコードが検出されませんでした。';
+                        }
+                    };
+                    img.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    </script>
+</body>
+</html>
