@@ -1,18 +1,15 @@
+# Project Structure
+
+```text
 .
-├── index.html                   (ホームページ・ツール一覧)
-├── bot/
-│   └── (bot関連ファイル)
-├── proxy/
-│   └── (proxy関連ファイル)
-├── video/
-│   └── (video関連ファイル)
-└── tools/
-    ├── printedit.html           (プリントを編集)
-    ├── pwa.html                 (pwa化サポート)
+├── index.html                 
+└── tools/        
     ├── code/
-    │   └── codeeditor.html      (コードエディタ)
+    │   └── codeeditor.html 
     ├── games/
-    │   └── games.html           (games)
+    │   └── games.html          
+    ├── printedit.html          
+    ├── pwa.html                
     └── qr/
-        ├── gamennaiqr.html      (画面内のqrコードをスキャン)
-        └── qrsakusei.html       (qrコード作成)
+        ├── gamennaiqr.html   
+        └── qrsakusei.html   
