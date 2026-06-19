@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tools</title>
+    <style>
+        :root {
+            --bg-color: #fafafa;
+            --panel-bg: #ffffff;
+            --text-main: #111111;
+            --text-sub: #666666;
+            --border-color: #e5e5e5;
+            --accent-color: #000000;
+            --star-color: #cccccc;
+            --star-active-color: #ffb800;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 40px;
+        }
+
+        .site-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            text-decoration: none;
+            color: var(--text-main);
+        }
+
+        .controls {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .search-input {
+            background-color: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 6px 12px;
+            font-size: 0.85rem;
+            color: var(--text-main);
+            outline: none;
+            width: 180px;
+            transition: border-color 0.2s;
+        }
+
+        .search-input:focus {
+            border-color: var(--accent-color);
+        }
+
+        .filter-btn {
+            background-color: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 6px 12px;
+            font-size: 0.85rem;
+            color: var(--text-sub);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .filter-btn:hover {
+            border-color: var(--accent-color);
+            color: var(--text-main);
+        }
+
+        .filter-btn.active {
+            background-color: var(--accent-color);
+            border-color: var(--accent-color);
+            color: var(--panel-bg);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 16px;
+        }
+
+        .card {
+            background-color: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 20px;
+            position: relative;
+            transition: border-color 0.2s ease, opacity 0.2s ease;
+        }
+
+        .card:hover {
+            border-color: var(--accent-color);
+        }
+
+        .card.hidden {
+            display: none;
+        }
+
+        .card-link {
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+
+        .card h2 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 6px;
+            padding-right: 24px;
+        }
+
+        .card p {
+            font-size: 0.85rem;
+            color: var(--text-sub);
+        }
+
+        .favorite-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+            z-index: 10;
+        }
+
+        .favorite-btn svg {
+            width: 18px;
+            height: 18px;
+            fill: var(--star-color);
+            transition: fill 0.2s ease, transform 0.1s ease;
+        }
+
+        .favorite-btn:hover svg {
+            transform: scale(1.1);
+        }
+
+        .favorite-btn.active svg {
+            fill: var(--star-active-color);
+        }
+
+        footer {
+            margin-top: 60px;
+            border-top: 1px solid var(--border-color);
+            padding-top: 20px;
+            font-size: 0.8rem;
+            color: var(--text-sub);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <a href="/" class="site-title">Tools</a>
+            <div class="controls">
+                <input type="text" id="searchInput" class="search-input" placeholder="ツールを検索...">
+                <button id="filterBtn" class="filter-btn">★ お気に入り</button>
+            </div>
+        </header>
+
+        <main class="grid" id="toolsGrid">
+            <div class="card" data-id="video" data-name="video extractor メディア情報 ストリーム解析">
+                <button class="favorite-btn" aria-label="お気に入りに追加">
+                    <svg viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                </button>
+                <a href="/video" class="card-link">
+                    <h2>Video Extractor</h2>
+                    <p>メディア情報の取得とストリーム解析</p>
+                </a>
+            </div>
+
+            <div class="card" data-id="proxy" data-name="proxy settings ネットワーク プロキシ 統合管理">
+                <button class="favorite-btn" aria-label="お気に入りに追加">
+                    <svg viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                </button>
+                <a href="/tools/setting.html" class="card-link">
+                    <h2>app setting</h2>
+                    <p>設定</p>
+                </a>
+            </div>
+
+            <div class="card" data-id="games" data-name="games ゲーム webベース 検証環境 ミニゲーム">
+                <button class="favorite-btn" aria-label="お気に入りに追加">
+                    <svg viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                </button>
+                <a href="/tools/games/games.html" class="card-link">
+                    <h2>Games</h2>
+                    <p>Webベースの簡易ゲーム・検証環境</p>
+                </a>
+            </div>
+
+            <div class="card" data-id="bot" data-name="bot console 自動化スクリプト 制御 ログ確認">
+                <button class="favorite-btn" aria-label="お気に入りに追加">
+                    <svg viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                </button>
+                <a href="/bot" class="card-link">
+                    <h2>Bot Console</h2>
+                    <p>自動化スクリプトの制御とログ確認</p>
+                </a>
+            </div>
+
+            <div class="card" data-id="qr-create" data-name="qrコード作成 qrsakusei ジェネレーター リンク">
+                <button class="favorite-btn" aria-label="お気に入りに追加">
+                    <svg viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                </button>
+                <a href="/tools/qr/qrsakusei.html" class="card-link">
+                    <h2>QR Code Generator</h2>
+                    <p>URLやテキストからのQRコード生成</p>
+                </a>
+            </div>
+
+            <div class="card" data-id="qr-scan" data-name="画面内のqrコードをスキャン gamennaiqr 読み取り 解析">
+                <button class="favorite-btn" aria-label="お気に入りに追加">
+                    <svg viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                </button>
+                <a href="/tools/qr/gamennaiqr.html" class="card-link">
+                    <h2>QR Code Scanner</h2>
+                    <p>画面内にあるQRコードの検出と解析</p>
+                </a>
+            </div>
+
+            <div class="card" data-id="print-edit" data-name="プリントを編集 printedit 印刷用 レイアウト ドキュメント">
+                <button class="favorite-btn" aria-label="お気に入りに追加">
+                    <svg viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                </button>
+                <a href="/tools/printedit.html" class="card-link">
+                    <h2>Print Editor</h2>
+                    <p>印刷用プリントの編集と文書構成</p>
+                </a>
+            </div>
+
+            <div class="card" data-id="pwa-support" data-name="pwa化サポート pwa インストール アプリ化 マニフェスト">
+                <button class="favorite-btn" aria-label="お気に入りに追加">
+                    <svg viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                </button>
+                <a href="/tools/pwa.html" class="card-link">
+                    <h2>PWA Support</h2>
+                    <p>WebサイトのPWA化およびアプリ化構成支援</p>
+                </a>
+            </div>
+
+            <div class="card" data-id="code-editor" data-name="コードエディタ codeeditor 開発 コンパイル 記述">
+                <button class="favorite-btn" aria-label="お気に入りに追加">
+                    <svg viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                </button>
+                <a href="/tools/code/codeeditor.html" class="card-link">
+                    <h2>Code Editor</h2>
+                    <p>ブラウザ上で動作する軽量開発環境</p>
+                </a>
+            </div>
+        </main>
+
+        <footer>
+            <p>&copy; 2026 Tools. All rights reserved.</p>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const storageKey = 'tools_favorites';
+            let favorites = JSON.parse(localStorage.getItem(storageKey)) || [];
+
+            const searchInput = document.getElementById('searchInput');
+            const filterBtn = document.getElementById('filterBtn');
+            const cards = document.querySelectorAll('.card');
+
+            let isFilterActive = false;
+
+            favorites.forEach(id => {
+                const card = document.querySelector(`.card[data-id="${id}"]`);
+                if (card) {
+                    card.querySelector('.favorite-btn').classList.add('active');
+                }
+            });
+
+            function updateVisibility() {
+                const query = searchInput.value.toLowerCase();
+
+                cards.forEach(card => {
+                    const nameData = card.dataset.name.toLowerCase();
+                    const id = card.dataset.id;
+                    
+                    const matchesSearch = nameData.includes(query);
+                    const matchesFilter = !isFilterActive || favorites.includes(id);
+
+                    if (matchesSearch && matchesFilter) {
+                        card.classList.remove('hidden');
+                    } else {
+                        card.classList.add('hidden');
+                    }
+                });
+            }
+
+            document.querySelectorAll('.favorite-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const card = btn.closest('.card');
+                    const id = card.dataset.id;
+                    
+                    if (btn.classList.contains('active')) {
+                        btn.classList.remove('active');
+                        favorites = favorites.filter(favId => favId !== id);
+                    } else {
+                        btn.classList.add('active');
+                        favorites.push(id);
+                    }
+                    
+                    localStorage.setItem(storageKey, JSON.stringify(favorites));
+                    updateVisibility();
+                });
+            });
+
+            searchInput.addEventListener('input', updateVisibility);
+
+            filterBtn.addEventListener('click', () => {
+                isFilterActive = !isFilterActive;
+                filterBtn.classList.toggle('active', isFilterActive);
+                updateVisibility();
+            });
+        });
+    </script>
+</body>
+</html>
