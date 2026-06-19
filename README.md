@@ -1,0 +1,18 @@
+.
+├── index.html                   (ホームページ・ツール一覧)
+├── bot/
+│   └── (bot関連ファイル)
+├── proxy/
+│   └── (proxy関連ファイル)
+├── video/
+│   └── (video関連ファイル)
+└── tools/
+    ├── printedit.html           (プリントを編集)
+    ├── pwa.html                 (pwa化サポート)
+    ├── code/
+    │   └── codeeditor.html      (コードエディタ)
+    ├── games/
+    │   └── games.html           (games)
+    └── qr/
+        ├── gamennaiqr.html      (画面内のqrコードをスキャン)
+        └── qrsakusei.html       (qrコード作成)
