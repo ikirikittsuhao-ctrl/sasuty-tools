@@ -106,11 +106,24 @@
             gap: 20px;
         }
 
+        /* 詳細操作エリアの表示・非表示用 */
+        .tool-content {
+            display: none;
+        }
+        .tool-content.active {
+            display: block;
+        }
+
         .section-card {
             background: rgba(255,255,255,0.02);
             border: 1px solid var(--panel-brd);
             border-radius: 8px;
             padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .section-card:last-child {
+            margin-bottom: 0;
         }
 
         .section-title {
@@ -218,7 +231,7 @@
             display: flex;
             flex-direction: column;
             gap: 6px;
-            max-height: 110px;
+            max-height: 180px;
             overflow-y: auto;
         }
 
@@ -237,14 +250,53 @@
             background: rgba(59, 130, 246, 0.1);
         }
 
-        /* タイムラインエリア */
+        /* タイムライン・下部構造エリア */
         .bottom-area {
-            height: 280px;
+            height: 330px;
             background: var(--timeline-bg);
             border-top: 1px solid var(--panel-brd);
             display: flex;
             flex-direction: column;
             z-index: 5;
+        }
+
+        /* 追加：横並びのツール選択ナビゲーションバー */
+        .timeline-tools-nav {
+            display: flex;
+            background: #121216;
+            border-bottom: 1px solid var(--panel-brd);
+            padding: 0 10px;
+            gap: 4px;
+        }
+
+        .nav-tab {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            padding: 10px 16px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.15s ease;
+        }
+
+        .nav-tab:hover {
+            color: #fff;
+            background: rgba(255,255,255,0.02);
+        }
+
+        .nav-tab.active {
+            color: var(--accent);
+            border-bottom-color: var(--accent);
+            background: rgba(59, 130, 246, 0.05);
+        }
+
+        .nav-tab .material-symbols-outlined {
+            font-size: 18px;
         }
 
         .time-info {
@@ -307,11 +359,37 @@
             overflow: hidden;
         }
 
+        .filmstrip-outer-container {
+            display: flex;
+            align-items: center;
+            background: #050507;
+            border-bottom: 1px solid var(--panel-brd);
+            position: relative;
+        }
+
+        .filmstrip-add-btn {
+            background: #1e1e24;
+            border: none;
+            color: var(--text-muted);
+            height: 36px;
+            width: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            z-index: 12;
+        }
+        .filmstrip-add-btn:hover {
+            background: var(--accent);
+            color: #fff;
+        }
+
         .filmstrip-container {
             height: 36px;
             background: #050507;
             display: flex;
-            border-bottom: 1px solid var(--panel-brd);
+            flex: 1;
             position: relative;
             pointer-events: none;
         }
@@ -369,11 +447,17 @@
         .track-item.image-type.selected {
             background: #ec4899;
         }
+        .track-item.video-type {
+            background: #10b981;
+        }
+        .track-item.video-type.selected {
+            background: #34d399;
+        }
 
         .track-item:active { cursor: grabbing; }
 
         .track-text {
-            padding: 0 10px;
+            padding: 0 5px;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
@@ -385,24 +469,26 @@
         }
         .track-text span { font-size: 14px; }
 
+        /* 伸縮補助機能のついたリサイズハンドル */
         .resize-handle {
-            width: 14px;
+            width: 24px;
             height: 100%;
-            background: rgba(0, 0, 0, 0.2);
+            background: rgba(0, 0, 0, 0.3);
             cursor: ew-resize;
             display: flex;
             align-items: center;
             justify-content: center;
             touch-action: none;
+            transition: background 0.15s;
         }
-        .resize-handle::after {
-            content: '';
-            width: 2px;
-            height: 10px;
-            background: rgba(255,255,255,0.4);
-            border-radius: 1px;
+        .resize-handle:hover {
+            background: rgba(0, 0, 0, 0.6);
         }
-        .resize-handle:hover { background: rgba(0, 0, 0, 0.4); }
+        .resize-handle span {
+            font-size: 16px;
+            color: rgba(255, 255, 255, 0.8);
+            font-weight: bold;
+        }
 
         .scene-marker {
             position: absolute;
@@ -498,12 +584,12 @@
             .side-panel {
                 border-left: none;
                 border-top: 1px solid var(--panel-brd);
-                height: 240px;
+                height: 260px;
                 padding: 15px;
                 gap: 15px;
             }
             .bottom-area {
-                height: 260px;
+                height: 310px;
             }
         }
     </style>
@@ -525,90 +611,123 @@
         </div>
     </div>
 
-    <div class="side-panel">
-        <div class="section-card">
-            <div class="section-title"><span class="material-symbols-outlined">settings</span>キャンバス設定</div>
-            <div class="control-group">
-                <label>アスペクト比 (解像度)</label>
-                <select id="aspectSelect" onchange="changeAspectRatio()">
-                    <option value="16:9">16:9 (横長動画 / 1280x720)</option>
-                    <option value="9:16">9:16 (縦長ショート / 720x1280)</option>
-                    <option value="1:1">1:1 (正方形スクエア / 1000x1000)</option>
-                </select>
-            </div>
-            <div class="grid-2">
+    <div class="side-panel" id="sidePanel">
+        
+        <div id="content-canvas" class="tool-content active">
+            <div class="section-card">
+                <div class="section-title"><span class="material-symbols-outlined">settings</span>キャンバス設定</div>
                 <div class="control-group">
-                    <label>背景カラー</label>
-                    <input type="color" id="canvasBgColor" value="#000000" onchange="draw()">
+                    <label>アスペクト比 (解像度)</label>
+                    <select id="aspectSelect" onchange="changeAspectRatio()">
+                        <option value="16:9">16:9 (横長動画 / 1280x720)</option>
+                        <option value="9:16">9:16 (縦長ショート / 720x1280)</option>
+                        <option value="1:1">1:1 (正方形スクエア / 1000x1000)</option>
+                    </select>
+                </div>
+                <div class="grid-2">
+                    <div class="control-group">
+                        <label>背景カラー</label>
+                        <input type="color" id="canvasBgColor" value="#000000" onchange="draw()">
+                    </div>
+                    <div class="control-group">
+                        <label>背景不透明度</label>
+                        <input type="number" id="canvasBgAlpha" value="100" min="0" max="100" step="10" oninput="draw()">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="content-video" class="tool-content">
+            <div class="section-card">
+                <div class="section-title"><span class="material-symbols-outlined">video_file</span>ビデオ素材・複数対応</div>
+                <div class="control-group">
+                    <label class="file-label" for="videoLoader">
+                        <span class="material-symbols-outlined">upload_file</span>動画ファイルを追加
+                    </label>
+                    <input type="file" id="videoLoader" accept="video/*" multiple>
+                </div>
+                <div class="video-list" id="videoPlaylist"></div>
+            </div>
+        </div>
+
+        <div id="content-effects" class="tool-content">
+            <div class="section-card">
+                <div class="section-title"><span class="material-symbols-outlined">tune</span>動画トランスフォーム & フィルター</div>
+                <div class="control-group">
+                    <label>ベース動画サイズ（倍率）: <span id="videoScaleVal">1.0</span>x</label>
+                    <input type="range" id="videoScale" min="0.1" max="2.0" step="0.05" value="1.0" oninput="updateVideoTransform()">
                 </div>
                 <div class="control-group">
-                    <label>背景不透明度</label>
-                    <input type="number" id="canvasBgAlpha" value="100" min="0" max="100" step="10" oninput="draw()">
+                    <label>映像フィルター効果</label>
+                    <select id="videoFilter" onchange="draw()">
+                        <option value="none">ノーマル（効果なし）</option>
+                        <option value="grayscale(100%)">モノクロ (Grayscale)</option>
+                        <option value="sepia(100%)">セピア (Sepia)</option>
+                        <option value="invert(100%)">色反転 (Invert)</option>
+                        <option value="blur(8px)">ブラーぼかし (Blur)</option>
+                        <option value="contrast(180%)">高コントラスト (Contrast)</option>
+                    </select>
                 </div>
             </div>
         </div>
 
-        <div class="section-card">
-            <div class="section-title"><span class="material-symbols-outlined">video_file</span>ビデオ素材・複数対応</div>
-            <div class="control-group">
-                <label class="file-label" for="videoLoader">
-                    <span class="material-symbols-outlined">upload_file</span>動画ファイルを追加
-                </label>
-                <input type="file" id="videoLoader" accept="video/*" multiple>
+        <div id="content-layers" class="tool-content">
+            <div class="section-card">
+                <div class="section-title"><span class="material-symbols-outlined">add_circle</span>レイヤー追加</div>
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    <button class="btn btn-primary" onclick="openModal('textModal')">
+                        <span class="material-symbols-outlined">title</span>テキストレイヤーを追加
+                    </button>
+                    <button class="btn" style="background: #db2777; border:none;" onclick="openModal('imageModal')">
+                        <span class="material-symbols-outlined">image</span>画像レイヤーを追加
+                    </button>
+                    <button class="btn" style="background: #10b981; border:none;" onclick="openOverlayVideoModal()">
+                        <span class="material-symbols-outlined">movie</span>オーバーレイ動画を重ねる
+                    </button>
+                </div>
             </div>
-            <div class="video-list" id="videoPlaylist"></div>
-        </div>
-
-        <div class="section-card">
-            <div class="section-title"><span class="material-symbols-outlined">tune</span>動画トランスフォーム & フィルター</div>
-            <div class="control-group">
-                <label>動画サイズ（倍率）: <span id="videoScaleVal">1.0</span>x</label>
-                <input type="range" id="videoScale" min="0.1" max="2.0" step="0.05" value="1.0" oninput="updateVideoTransform()">
-            </div>
-            <div class="control-group">
-                <label>映像フィルター効果</label>
-                <select id="videoFilter" onchange="draw()">
-                    <option value="none">ノーマル（効果なし）</option>
-                    <option value="grayscale(100%)">モノクロ (Grayscale)</option>
-                    <option value="sepia(100%)">セピア (Sepia)</option>
-                    <option value="invert(100%)">色反転 (Invert)</option>
-                    <option value="blur(8px)">ブラーぼかし (Blur)</option>
-                    <option value="contrast(180%)">高コントラスト (Contrast)</option>
-                </select>
-            </div>
-        </div>
-
-        <div class="section-card">
-            <div class="section-title"><span class="material-symbols-outlined">add_circle</span>レイヤー追加</div>
-            <div style="display: flex; flex-direction: column; gap: 10px;">
-                <button class="btn btn-primary" onclick="openModal('textModal')">
-                    <span class="material-symbols-outlined">title</span>テキストレイヤーを追加
-                </button>
-                <button class="btn" style="background: #db2777; border:none;" onclick="openModal('imageModal')">
-                    <span class="material-symbols-outlined">image</span>画像レイヤーを追加
+            
+            <div id="deleteZone" style="display:none; margin-top: 15px;">
+                <button class="btn btn-danger" style="width: 100%;" onclick="deleteSelectedLayer()">
+                    <span class="material-symbols-outlined">delete</span>選択中のレイヤーを削除
                 </button>
             </div>
         </div>
 
-        <div class="section-card">
-            <div class="section-title"><span class="material-symbols-outlined">bookmark</span>ブックマーク・シーン</div>
-            <div class="control-group">
-                <input type="text" id="sceneName" placeholder="シーン名（例：サビ、OP）">
+        <div id="content-scenes" class="tool-content">
+            <div class="section-card">
+                <div class="section-title"><span class="material-symbols-outlined">bookmark</span>ブックマーク・シーン</div>
+                <div class="control-group">
+                    <input type="text" id="sceneName" placeholder="シーン名（例：サビ、OP）">
+                </div>
+                <button class="btn" style="width:100%;" onclick="addSceneMarker()">
+                    <span class="material-symbols-outlined">push_pin</span>現在の位置にピン留め
+                </button>
             </div>
-            <button class="btn" style="width:100%;" onclick="addSceneMarker()">
-                <span class="material-symbols-outlined">push_pin</span>現在の位置にピン留め
-            </button>
         </div>
 
-        <div id="deleteZone" style="display:none;">
-            <button class="btn btn-danger" style="width: 100%;" onclick="deleteSelectedLayer()">
-                <span class="material-symbols-outlined">delete</span>選択中のレイヤーを削除
-            </button>
-        </div>
     </div>
 </div>
 
 <div class="bottom-area">
+    <div class="timeline-tools-nav">
+        <button class="nav-tab active" onclick="switchToolTab('canvas', this)">
+            <span class="material-symbols-outlined">settings</span>キャンバス
+        </button>
+        <button class="nav-tab" onclick="switchToolTab('video', this)">
+            <span class="material-symbols-outlined">video_file</span>ビデオ素材
+        </button>
+        <button class="nav-tab" onclick="switchToolTab('effects', this)">
+            <span class="material-symbols-outlined">tune</span>変形・フィルター
+        </button>
+        <button class="nav-tab" onclick="switchToolTab('layers', this)">
+            <span class="material-symbols-outlined">layers</span>レイヤー管理
+        </button>
+        <button class="nav-tab" onclick="switchToolTab('scenes', this)">
+            <span class="material-symbols-outlined">bookmark</span>シーンピン
+        </button>
+    </div>
+
     <div class="time-info">
         <div class="time-left">
             <span>再生位置: <b id="curTime" style="color:#fff;">0.00秒</b></span>
@@ -627,7 +746,15 @@
     </div>
 
     <div class="timeline-container-wrapper">
-        <div class="filmstrip-container" id="filmstrip"></div>
+        <div class="filmstrip-outer-container">
+            <button class="filmstrip-add-btn" onclick="openModal('imageModal')" title="画像を追加">
+                <span class="material-symbols-outlined">add_photo_alternate</span>
+            </button>
+            <div class="filmstrip-container" id="filmstrip"></div>
+            <button class="filmstrip-add-btn" onclick="openOverlayVideoModal()" title="動画を追加">
+                <span class="material-symbols-outlined">video_call</span>
+            </button>
+        </div>
         <div class="timeline-tracks" id="timelineTracks"></div>
     </div>
 </div>
@@ -704,6 +831,26 @@
     </div>
 </div>
 
+<div class="modal-overlay" id="overlayVideoModal">
+    <div class="modal-container">
+        <div class="modal-header">
+            <div class="modal-title"><span class="material-symbols-outlined">movie</span>動画レイヤー設定</div>
+            <button class="btn-close" onclick="closeModal('overlayVideoModal')"><span class="material-symbols-outlined">close</span></button>
+        </div>
+        <div class="modal-body">
+            <div class="control-group">
+                <label>配置する動画ソースを選択（リスト内動画）</label>
+                <select id="overlayVideoSelect"></select>
+            </div>
+            <p style="font-size:11px; color:var(--text-muted); margin:0;">※動画レイヤーはメインタイムラインと完全同期してプレビュー再生されます。</p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn" onclick="closeModal('overlayVideoModal')">キャンセル</button>
+            <button class="btn btn-primary" style="background:#10b981;" onclick="executeAddVideoLayer()">タイムラインに配置</button>
+        </div>
+    </div>
+</div>
+
 <script>
     const state = {
         video: document.getElementById('vHidden'),
@@ -735,8 +882,24 @@
         // 各種動的アセットストレージ
         customFontCount: 0,
         pendingImageSrc: null,
-        imageCache: {}
+        imageCache: {},
+        videoCache: {} // ビデオレイヤー用のHTMLVideoElementインスタンス保持
     };
+
+    // タブ切り替え制御用の追加関数
+    function switchToolTab(targetContentId, tabButton) {
+        // すべてのコンテンツを非表示化
+        const contents = document.querySelectorAll('.tool-content');
+        contents.forEach(content => content.classList.remove('active'));
+
+        // すべてのタブのスタイルをノーマル化
+        const tabs = document.querySelectorAll('.nav-tab');
+        tabs.forEach(tab => tab.classList.remove('active'));
+
+        // ターゲットをアクティブ化
+        document.getElementById(`content-${targetContentId}`).classList.add('active');
+        tabButton.classList.add('active');
+    }
 
     // ビデオローダー設定（複数対応）
     document.getElementById('videoLoader').onchange = function(e) {
@@ -764,7 +927,7 @@
             const item = document.createElement('div');
             item.className = `video-item ${index === state.activeVideoIndex ? 'active' : ''}`;
             item.innerHTML = `
-                <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:200px;">${v.name}</span>
+                <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:180px;">${v.name}</span>
                 <button class="btn" style="padding:4px 8px; font-size:11px;" onclick="switchVideo(${index}); event.stopPropagation();">選択</button>
             `;
             listContainer.appendChild(item);
@@ -808,10 +971,26 @@
     playBtn.onclick = () => {
         if(state.isPlaying) {
             state.video.pause();
+            // 子ビデオレイヤーも連動して一時停止
+            state.layers.forEach(l => {
+                if(l.type === 'video' && state.videoCache[l.id]) {
+                    state.videoCache[l.id].pause();
+                }
+            });
             state.isPlaying = false;
             playIcon.textContent = "play_arrow";
         } else {
             state.video.play();
+            // 再生開始位置に応じた子ビデオストリームの同期
+            const cur = state.video.currentTime;
+            state.layers.forEach(l => {
+                if(l.type === 'video' && state.videoCache[l.id]) {
+                    if(cur >= l.start && cur <= (l.start + l.duration)) {
+                        state.videoCache[l.id].currentTime = cur - l.start;
+                        state.videoCache[l.id].play().catch(()=>{});
+                    }
+                }
+            });
             state.isPlaying = true;
             playIcon.textContent = "pause";
             requestAnimationFrame(loop);
@@ -819,7 +998,21 @@
     };
 
     document.getElementById('masterSeek').oninput = (e) => {
-        state.video.currentTime = e.target.value;
+        const targetTime = parseFloat(e.target.value);
+        state.video.currentTime = targetTime;
+        
+        // シークに合わせて子ビデオレイヤーの再生ヘッド位置も即時同期
+        state.layers.forEach(l => {
+            if(l.type === 'video' && state.videoCache[l.id]) {
+                const subVideo = state.videoCache[l.id];
+                if(targetTime >= l.start && targetTime <= (l.start + l.duration)) {
+                    subVideo.currentTime = targetTime - l.start;
+                } else {
+                    subVideo.pause();
+                }
+            }
+        });
+        
         if(!state.isPlaying) draw();
     };
 
@@ -871,6 +1064,23 @@
 
     function closeModal(id) {
         document.getElementById(id).classList.remove('active');
+    }
+
+    // オーバーレイビデオ用モーダル呼び出しの制御
+    function openOverlayVideoModal() {
+        const select = document.getElementById('overlayVideoSelect');
+        select.innerHTML = "";
+        if(state.videos.length === 0) {
+            alert("ビデオ素材がありません。まずは「ビデオ素材」タブから動画ファイルをアップロードしてください。");
+            return;
+        }
+        state.videos.forEach((v, index) => {
+            const opt = document.createElement('option');
+            opt.value = index;
+            opt.textContent = v.name;
+            select.appendChild(opt);
+        });
+        openModal('overlayVideoModal');
     }
 
     // フォントファイルの読み込み処理
@@ -980,9 +1190,58 @@
         };
     }
 
+    // 動画の上に動画を重ねるビデオレイヤー作成実行システム
+    function executeAddVideoLayer() {
+        const selectIndex = parseInt(document.getElementById('overlayVideoSelect').value);
+        if(isNaN(selectIndex) || !state.videos[selectIndex]) return;
+
+        const targetSrc = state.videos[selectIndex].src;
+        const targetName = state.videos[selectIndex].name;
+        const layerId = Date.now();
+
+        // 仮想再生用ビデオエレメントを作成してキャッシュに保持
+        const subVideoElement = document.createElement('video');
+        subVideoElement.src = targetSrc;
+        subVideoElement.muted = true; 
+        subVideoElement.loop = true;
+        subVideoElement.crossOrigin = "anonymous";
+        subVideoElement.load();
+
+        state.videoCache[layerId] = subVideoElement;
+
+        const newLayer = {
+            id: layerId,
+            type: 'video',
+            name: targetName,
+            start: Math.max(0, state.video.currentTime - 0.5),
+            duration: 4.0,
+            x: state.canvas.width / 2 - 100,
+            y: state.canvas.height / 2 - 100,
+            size: 320, // デフォルト表示横幅
+            widthCache: 320,
+            heightCache: 180
+        };
+
+        subVideoElement.onloadedmetadata = () => {
+            newLayer.heightCache = (subVideoElement.videoHeight / subVideoElement.videoWidth) * newLayer.size;
+            draw();
+        };
+
+        state.layers.push(newLayer);
+        state.selectedLayerId = layerId;
+
+        closeModal('overlayVideoModal');
+        updateTimelineUI();
+        draw();
+    }
+
     // 選択レイヤー削除
     function deleteSelectedLayer() {
         if(state.selectedLayerId) {
+            if(state.videoCache[state.selectedLayerId]) {
+                state.videoCache[state.selectedLayerId].pause();
+                delete state.videoCache[state.selectedLayerId];
+            }
             state.layers = state.layers.filter(l => l.id !== state.selectedLayerId);
             state.selectedLayerId = null;
             updateTimelineUI();
@@ -1006,6 +1265,11 @@
         const delZone = document.getElementById('deleteZone');
         if(state.selectedLayerId) {
             delZone.style.display = "block";
+            // レイヤーが選択された場合は、利便性のため自動的にレイヤー管理タブを開く
+            const layerTabButton = document.querySelectorAll('.nav-tab')[3];
+            if(layerTabButton && !layerTabButton.classList.contains('active')) {
+                switchToolTab('layers', layerTabButton);
+            }
         } else {
             delZone.style.display = "none";
         }
@@ -1025,6 +1289,7 @@
             const bar = document.createElement('div');
             bar.className = "track-item";
             if(l.type === 'image') bar.classList.add('image-type');
+            if(l.type === 'video') bar.classList.add('video-type');
             if(state.selectedLayerId === l.id) bar.classList.add('selected');
             
             const leftPercent = (l.start / state.duration) * 100;
@@ -1033,9 +1298,10 @@
             bar.style.left = leftPercent + "%";
             bar.style.width = widthPercent + "%";
 
-            // 左端伸縮ハンドル
+            // 左端伸縮ハンドル（矢印アイコン付きで左右の伸ばし操作を補助）
             const leftHandle = document.createElement('div');
             leftHandle.className = "resize-handle";
+            leftHandle.innerHTML = `<span class="material-symbols-outlined">chevron_left</span>`;
             leftHandle.addEventListener('pointerdown', (e) => {
                 state.resizingLayer = l;
                 state.resizeMode = 'start';
@@ -1048,13 +1314,16 @@
             textSpan.className = "track-text";
             if(l.type === 'text') {
                 textSpan.innerHTML = `<span class="material-symbols-outlined">title</span> ${l.text}`;
-            } else {
+            } else if(l.type === 'image') {
                 textSpan.innerHTML = `<span class="material-symbols-outlined">image</span> [画像要素]`;
+            } else if(l.type === 'video') {
+                textSpan.innerHTML = `<span class="material-symbols-outlined">movie</span> ${l.name}`;
             }
 
-            // 右端伸縮ハンドル
+            // 右端伸縮ハンドル（矢印アイコン付きで左右の伸ばし操作を補助）
             const rightHandle = document.createElement('div');
             rightHandle.className = "resize-handle";
+            rightHandle.innerHTML = `<span class="material-symbols-outlined">chevron_right</span>`;
             rightHandle.addEventListener('pointerdown', (e) => {
                 state.resizingLayer = l;
                 state.resizeMode = 'end';
@@ -1147,7 +1416,7 @@
                 const cornerX = l.x + l.widthCache / 2;
                 const cornerY = l.y + l.heightCache / 2;
                 const dist = Math.hypot(clickX - cornerX, clickY - cornerY);
-                if (dist < 40) { // iPadでのタップ誤作動防止のため判定サイズを若干拡張
+                if (dist < 40) { 
                     state.canvasResizeLayer = l;
                     state.canvasDragOffsetX = clickX;
                     state.canvasStartSize = l.size;
@@ -1249,6 +1518,21 @@
         }
         document.getElementById('curScene').textContent = currentScene;
 
+        // 連動して各ビデオレイヤーエレメントの再生タイムスタンプを維持・制御
+        state.layers.forEach(l => {
+            if(l.type === 'video' && state.videoCache[l.id]) {
+                const subVid = state.videoCache[l.id];
+                if(cur >= l.start && cur <= (l.start + l.duration)) {
+                    if(subVid.paused) {
+                        subVid.currentTime = cur - l.start;
+                        subVid.play().catch(()=>{});
+                    }
+                } else {
+                    if(!subVid.paused) subVid.pause();
+                }
+            }
+        });
+
         draw();
         requestAnimationFrame(loop);
     }
@@ -1284,10 +1568,10 @@
                 ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
             }
             ctx.restore();
-            ctx.filter = "none"; // フィルターをリセット
+            ctx.filter = "none"; 
         }
 
-        // 各種動的レイヤー（テキスト・画像）の一括巡回描画
+        // 各種動的レイヤー（テキスト・画像・追加ビデオ）の一括巡回描画
         layers.forEach(l => {
             if(time >= l.start && time <= (l.start + l.duration)) {
                 ctx.save();
@@ -1306,23 +1590,20 @@
                     renderX += (Math.random() - 0.5) * 12;
                     renderY += (Math.random() - 0.5) * 12;
                 } else if (l.animation === 'slideIn') {
-                    // 最初の0.5秒で左端から現在の位置へスライドイン
                     if(elapsed < 0.5) {
                         const progress = elapsed / 0.5;
                         renderX = (l.x * progress);
                     }
                 } else if (l.animation === 'rotate') {
-                    renderAngle = elapsed * 2; // 時間経過で回転
+                    renderAngle = elapsed * 2; 
                 }
 
-                // 中心点を基準に変形させるためにトランスレート処理
                 ctx.translate(renderX, renderY);
                 if(renderAngle !== 0) {
                     ctx.rotate(renderAngle);
                 }
 
                 if(l.type === 'text') {
-                    // テキストマトリクス計算
                     ctx.font = `bold ${l.size}px ${l.font}`;
                     ctx.fillStyle = "#ffffff";
                     ctx.strokeStyle = "#000000";
@@ -1338,22 +1619,27 @@
                     ctx.fillText(l.text, 0, 0);
 
                 } else if(l.type === 'image' && state.imageCache[l.id]) {
-                    // 画像マトリクス計算
                     const img = state.imageCache[l.id];
                     l.widthCache = l.size;
                     l.heightCache = (img.height / img.width) * l.size;
 
                     ctx.drawImage(img, -l.widthCache / 2, -l.heightCache / 2, l.widthCache, l.heightCache);
+                } else if(l.type === 'video' && state.videoCache[l.id]) {
+                    // 動画の上に動画を重ねるピクチャー・イン・ピクチャー描画コア
+                    const subVid = state.videoCache[l.id];
+                    l.widthCache = l.size;
+                    if(subVid.videoWidth > 0) {
+                        l.heightCache = (subVid.videoHeight / subVid.videoWidth) * l.size;
+                    }
+                    ctx.drawImage(subVid, -l.widthCache / 2, -l.heightCache / 2, l.widthCache, l.heightCache);
                 }
 
-                // 選択時のマニピュレータ・バウンディングボックスのアウトライン描画
                 if (state.selectedLayerId === l.id) {
                     ctx.strokeStyle = "#3b82f6";
                     ctx.lineWidth = 3;
                     ctx.setLineDash([6, 4]);
                     ctx.strokeRect(-l.widthCache / 2 - 8, -l.heightCache / 2 - 8, l.widthCache + 16, l.heightCache + 16);
                     
-                    // トラック変形ポイントマニピュレータ (青い丸)
                     ctx.fillStyle = "#ffffff";
                     ctx.strokeStyle = "#3b82f6";
                     ctx.lineWidth = 4;
