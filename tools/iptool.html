@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>IP Tool</title>
+    <link rel="stylesheet" href="static/css/style.css">
+    <style>
+        .tool-content { display: block; }
+        .header-container { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .back-btn { cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header-container">
+            <div class="tool-title">IP情報取得</div>
+            <button class="back-btn" onclick="history.back()">戻る</button>
+        </header>
+
+        <div class="main-panel">
+            <div id="ip-tool" class="tool-content">
+                <div class="form-group">
+                    <label>IPアドレスを入力 (空欄で自分のIP)</label>
+                    <input type="text" id="ip-input" placeholder="8.8.8.8">
+                </div>
+                <button class="btn" onclick="lookupIP()">検索・取得</button>
+                <div id="ip-result" class="result-area hidden"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function lookupIP() {
+            const ip = document.getElementById('ip-input').value;
+            const url = ip ? `https://ipapi.co/${ip}/json/` : 'https://ipapi.co/json/';
+            const res = await fetch(url).then(r => r.json());
+            const display = document.getElementById('ip-result');
+            
+            if (res.error) {
+                display.innerHTML = `<p>エラー: ${res.reason || '取得失敗'}</p>`;
+            } else {
+                const mapUrl = `https://www.google.com/maps?q=${res.latitude},${res.longitude}`;
+                display.innerHTML = `
+                    <ul>
+                        <li><strong>IP:</strong> ${res.ip}</li>
+                        <li><strong>都市:</strong> ${res.city}</li>
+                        <li><strong>地域:</strong> ${res.region}</li>
+                        <li><strong>国:</strong> ${res.country_name}</li>
+                        <li><strong>組織:</strong> ${res.org}</li>
+                        <li><strong>緯度・経度:</strong> ${res.latitude}, ${res.longitude}</li>
+                        <li><a href="${mapUrl}" target="_blank" style="color:blue; text-decoration:underline;">地図で表示する</a></li>
+                    </ul>
+                `;
+            }
+            display.classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
