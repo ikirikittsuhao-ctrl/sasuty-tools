@@ -1,0 +1,1212 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <style>body {
+  background: #111827;
+  color: #38bdf8;
+  font-family: sans-serif;
+}
+      </style>
+</head>
+<body>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+    <title>MINECRAFT - 平原の木・リアル肉・ゾンビ襲来版</title>
+    <style>
+        html, body { 
+            width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden; 
+            user-select: none; -webkit-user-select: none; 
+            touch-action: none; 
+            overscroll-behavior: none;
+            -webkit-text-size-adjust: none;
+            font-family: sans-serif; background-color: #050505; 
+        }
+        canvas { display: block; position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
+        
+        /* 🏠 タイトル画面 */
+        #home-screen {
+            position: absolute; top:0; left:0; width:100%; height:100%;
+            background: #2b2b2b; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; gap: 10px;
+            overflow-y: auto; padding: 20px; box-sizing: border-box;
+            touch-action: pan-y;
+        }
+        #game-title { color: white; font-size: 24px; font-weight: bold; text-shadow: 3px 3px 0px #000; text-align: center; margin-bottom: 5px; }
+        .menu-btn { width: 240px; padding: 12px; background: #555; border: 2px solid #ccc; color: white; font-size: 14px; font-weight: bold; text-align: center; cursor: pointer; border-radius: 4px; box-shadow: 0 4px 0 #333; box-sizing: border-box; }
+        .menu-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #333; }
+        .input-box { width: 240px; padding: 10px; background: #222; border: 2px solid #555; color: #fff; border-radius: 4px; font-size: 12px; text-align: center; box-sizing: border-box; }
+        
+        /* ⏸️ ポーズ画面 */
+        #pause-screen {
+            position: absolute; top:0; left:0; width:100%; height:100%;
+            background: rgba(0,0,0,0.85); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 150; gap: 12px;
+        }
+        .setting-row { display: flex; flex-direction: column; align-items: center; gap: 4px; color: white; font-size: 13px; background: rgba(255,255,255,0.1); padding: 8px 16px; border-radius: 5px; width: 220px; }
+        .setting-row select { width: 100%; padding: 4px; background: #333; color: white; border: 1px solid #666; border-radius: 3px; }
+
+        /* UI基本要素 */
+        #pause-trigger { position: absolute; top: 10px; right: 10px; width: 40px; height: 40px; background: rgba(0,0,0,0.5); border: 2px solid rgba(255,255,255,0.4); border-radius: 6px; color: white; font-size: 16px; font-weight: bold; text-align: center; line-height: 36px; cursor: pointer; z-index: 80; display: none; }
+        #crosshair { position: absolute; top: 50%; left: 50%; width: 14px; height: 14px; transform: translate(-50%, -50%); color: rgba(255,255,255,0.8); font-size: 20px; pointer-events: none; z-index: 10; display: none; text-align: center; line-height: 14px; }
+        
+        /* 🧱 採掘プログレスバー */
+        #break-progress-container { position: absolute; top: 55%; left: 50%; transform: translate(-50%, -50%); width: 80px; height: 6px; background: rgba(0,0,0,0.5); border: 1px solid #fff; display: none; z-index: 15; }
+        #break-progress-bar { width: 0%; height: 100%; background: #ffaa00; }
+
+        /* 左上ステータス情報 */
+        #survival-ui { position: absolute; top: 10px; left: 10px; color: white; text-shadow: 1px 1px 2px black; font-weight: bold; z-index: 10; font-size: 11px; display: none; pointer-events: none; line-height: 1.5; }
+        
+        /* 🫧 酸素ゲージ */
+        #oxygen-ui { position: absolute; bottom: 135px; left: 50%; transform: translateX(-50%); display: none; gap: 2px; z-index: 25; pointer-events: none; background: rgba(0,0,0,0.4); padding: 3px 6px; border-radius: 6px; }
+        .bubble { width: 8px; height: 8px; background: #00aaff; border-radius: 50%; border: 1px solid #ffffff; box-shadow: 0 0 2px #000; }
+        #damage-flash { position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(255,0,0,0); pointer-events: none; z-index: 90; transition: background 0.08s ease; }
+
+        /* 📱 画面最下部UIコンテナ */
+        #bottom-ui-wrapper {
+            position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%);
+            display: none; flex-direction: column; align-items: center; gap: 8px;
+            width: 100%; max-width: 360px; pointer-events: none; z-index: 30;
+        }
+
+        /* 🍖 グラフィカルHUDバー */
+        #hud-bars-container { 
+            display: flex; width: 310px; height: 20px; justify-content: space-between; align-items: center; pointer-events: none;
+        }
+        .hud-side-bar { display: flex; align-items: center; gap: 1px; min-height: 16px; position: relative; }
+        .hud-pixel-icon { width: 12px; height: 12px; image-rendering: pixelated; }
+        #armor-bar { position: absolute; top: -14px; left: 0; display: flex; gap: 1px; min-height: 12px; }
+
+        /* 🧱 下部ホットバーUI */
+        #hotbar { display: flex; gap: 2px; background: #8f8f8f; padding: 3px; border: 3px solid #3c3c3c; border-radius: 2px; width: 100%; justify-content: center; box-sizing: border-box; pointer-events: auto; touch-action: manipulation; }
+        .ui-slot { width: 36px; height: 36px; background: #8b8b8b; border: 3px solid; border-color: #373737 #ffffff #ffffff #373737; position: relative; display: flex; justify-content: center; align-items: center; cursor: pointer; box-sizing: border-box; }
+        .ui-slot.active { border-color: #ffffff; background: #adadad; }
+        .slot-count { position: absolute; bottom: 1px; right: 1px; font-size: 10px; color: white; font-weight: bold; text-shadow: 1px 1px 0 #000; font-family: monospace; z-index: 10; pointer-events: none; }
+        #bag-toggle-btn { padding: 5px 10px; background: #555; border: 2px solid #ccc; color: white; font-size: 11px; font-weight: bold; border-radius: 4px; cursor: pointer; pointer-events: auto; text-align: center; width: 150px; touch-action: manipulation; }
+
+        /* 🕹️ 操作パッド */
+        #touch-controls-left { position: absolute; bottom: 20px; left: 20px; width: 130px; height: 130px; z-index: 10; display: none; }
+        .dpad-btn { position: absolute; width: 42px; height: 42px; background: rgba(0, 0, 0, 0.5); border: 2px solid rgba(255,255,255,0.4); border-radius: 8px; color: white; text-align: center; line-height: 40px; font-weight: bold; font-size: 18px; touch-action: none; }
+        #btn-up { top: 0; left: 44px; } #btn-left { top: 44px; left: 0; } #btn-right { top: 44px; left: 88px; } #btn-down { top: 88px; left: 44px; }
+
+        #touch-controls-right { position: absolute; bottom: 20px; right: 20px; width: 140px; height: 140px; z-index: 10; display: none; }
+        .action-btn { position: absolute; background: rgba(0, 0, 0, 0.6); border: 2px solid rgba(255,255,255,0.5); color: white; text-align: center; font-weight: bold; display: flex; flex-direction: column; justify-content: center; align-items: center; border-radius: 50%; touch-action: none; }
+        #btn-attack { top: 0; left: 0; width: 60px; height: 60px; background: rgba(200,50,50,0.6); font-size: 11px; }
+        #btn-use { top: 0; right: 0; width: 60px; height: 60px; background: rgba(50,150,50,0.7); font-size: 11px; } 
+        #btn-jump { bottom: 0; right: 0; width: 55px; height: 55px; font-size: 12px; }
+
+        /* 🎒 インベントリ / かまど画面 */
+        #inventory-screen { position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.85); z-index: 200; display: none; color: white; box-sizing: border-box; padding: 15px; flex-direction: column; gap: 10px; touch-action: none; }
+        .inv-header { display: flex; justify-content: space-between; align-items: center; }
+        .inv-title { font-size: 15px; font-weight: bold; text-shadow: 2px 2px 0 #000; }
+        .close-btn { padding: 6px 12px; background: #aa3333; border: 2px solid #ffaaaa; color: white; font-weight: bold; border-radius: 4px; cursor: pointer; }
+        
+        #holding-status { background: #aa7700; padding: 4px; border-radius: 4px; text-align: center; font-size: 12px; font-weight: bold; display: none; }
+        .inv-container { display: flex; flex: 1; gap: 10px; min-height: 0; }
+        .inv-section { flex: 1.2; background: #4a4a4a; border: 3px solid #222; padding: 8px; border-radius: 4px; display: flex; flex-direction: column; }
+        .grid-wrapper { display: flex; flex-wrap: wrap; gap: 5px; overflow-y: auto; align-content: flex-start; flex: 1; touch-action: pan-y; }
+        
+        /* 🛡️ 装備スロット */
+        #armor-slots-container { display: flex; flex-direction: column; gap: 4px; background: #3a3a3a; padding: 6px; border: 2px solid #222; border-radius: 4px; margin-bottom: 5px; align-items: center; }
+        .armor-row { display: flex; gap: 8px; align-items: center; width: 100%; justify-content: center; }
+        .armor-label { font-size: 11px; color: #ccc; width: 40px; text-align: right; }
+
+        .craft-layout { flex: 0.8; display: flex; flex-direction: column; align-items: center; gap: 8px; justify-content: center; }
+        .craft-grid-dynamic { display: grid; gap: 4px; background: #3a3a3a; padding: 6px; border: 2px solid #222; border-radius: 4px; }
+        .craft-slot { width: 44px; height: 44px; background: #8b8b8b; border: 3px solid; border-color: #373737 #ffffff #ffffff #373737; display: flex; justify-content: center; align-items: center; position: relative; cursor: pointer; }
+        .craft-arrow-container { display: flex; align-items: center; gap: 10px; }
+        .craft-arrow { font-size: 24px; color: #fff; text-shadow: 2px 2px 0 #000; }
+        .craft-action-btn { padding: 6px 12px; background: #3a7a3a; border: 2px solid #66bb66; color: white; font-size: 12px; font-weight: bold; border-radius: 4px; cursor: pointer; }
+        .craft-action-btn:disabled { background: #555; border-color: #777; color: #aaa; cursor: not-allowed; }
+        .clear-btn { padding: 3px 8px; background: #777; border: 1px solid #ccc; color: white; font-size: 11px; border-radius: 3px; cursor: pointer; }
+
+        /* 🔥 かまどレイアウト */
+        #furnace-layout { display: none; flex-direction: column; align-items: center; gap: 8px; justify-content: center; }
+        .furnace-core { display: flex; flex-direction: column; align-items: center; gap: 4px; background: #3a3a3a; padding: 10px; border: 2px solid #222; border-radius: 4px; }
+        #furnace-fire { font-size: 18px; color: #555; }
+        #furnace-fire.burning { color: #ff5500; text-shadow: 0 0 6px #ffaa00; }
+        #furnace-progress-text { font-size: 11px; color: #aaa; font-family: monospace; }
+
+        .pixel-art { width: 28px; height: 28px; image-rendering: pixelated; image-rendering: crisp-edges; pointer-events: none; }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+
+    <div id="home-screen">
+        <div id="game-title">MINECRAFT<br><span style="font-size:12px; color:#ffaa00;">🧟 リアルお肉テクスチャ＆平原の木＆ゾンビ追加版</span></div>
+        <input type="number" id="seed-input" class="input-box" placeholder="新規シード値 (空欄でランダム)">
+        <div class="menu-btn" onclick="clickStartGame()">世界を新規生成</div>
+        <hr style="width:240px; border:1px solid #444; margin:5px 0;">
+        <input type="text" id="savecode-input" class="input-box" placeholder="ここにセーブコードを貼り付け">
+        <div class="menu-btn" style="background:#3a5a7a; border-color:#6e9ebb;" onclick="loadWithSaveCode()">セーブコードからロード</div>
+    </div>
+
+    <div id="pause-screen">
+        <div style="color:white; font-size:22px; font-weight:bold; margin-bottom:5px;">一時停止</div>
+        <div class="setting-row">
+            <label for="render-dist-select">👁️ 描画距離 (チャンク半径)</label>
+            <select id="render-dist-select" onchange="changeRenderDistance(this.value)">
+                <option value="1">1 (超軽量)</option>
+                <option value="2" selected>2 (標準)</option>
+                <option value="3">3 (遠景)</option>
+            </select>
+        </div>
+        <div class="menu-btn" style="background:#3a6a3a; border-color:#6ebb6e;" onclick="togglePause()">再開</div>
+        <div style="color:#aaa; font-size:11px; margin-top:5px;">↓セーブコード</div>
+        <input type="text" id="savecode-output" class="input-box" style="width:260px;" readonly onclick="this.select();">
+        <div class="menu-btn" style="background:#aa3333; border-color:#ffaaaa; margin-top:10px;" onclick="backToHome()">⚠️ タイトルへ戻る</div>
+    </div>
+
+    <div id="pause-trigger" onclick="togglePause()">⏸️</div>
+    <div id="crosshair">+</div>
+
+    <div id="break-progress-container"><div id="break-progress-bar"></div></div>
+    
+    <div id="survival-ui">
+        <div id="hud-fps" style="color:#00ffcc; font-weight:bold;">FPS: --</div>
+        <div id="hud-time" style="color:#ffaa00; font-weight:bold;">時間: 0 (昼) 明るさ: 15</div>
+        <div id="hud-biome" style="color:#66bb66;">バイオーム: 探索中</div>
+        <div id="hud-seed" style="color:#ffeb3b;">SEED: 0</div>
+        <div id="hud-pos" style="color:#cccccc;">XYZ: 0.0, 0.0, 0.0</div>
+    </div>
+
+    <div id="oxygen-ui"></div>
+    <div id="damage-flash"></div>
+
+    <div id="bottom-ui-wrapper">
+        <div id="hud-bars-container">
+            <div class="hud-side-bar">
+                <div id="armor-bar"></div>
+                <div id="heart-bar" style="display:flex; gap:1px;"></div>
+            </div>
+            <div class="hud-side-bar" id="food-bar" style="display:flex; flex-direction:row-reverse; gap:1px;"></div>
+        </div>
+        <div id="hotbar"></div>
+        <div id="bag-toggle-btn" onclick="toggleInventory()">🎒 インベントリ</div>
+    </div>
+    
+    <div id="touch-controls-left">
+        <div id="btn-up" class="dpad-btn">▲</div><div id="btn-left" class="dpad-btn">◀</div>
+        <div id="btn-right" class="dpad-btn">▶</div><div id="btn-down" class="dpad-btn">▼</div>
+    </div>
+
+    <div id="touch-controls-right">
+        <div id="btn-attack" class="action-btn">⚔️<div>攻撃/破壊</div></div>
+        <div id="btn-use" class="action-btn">🧱<div>使用/設置</div></div> 
+        <div id="btn-jump" class="action-btn">▲<div>跳ぶ</div></div>
+    </div>
+
+    <div id="inventory-screen">
+        <div class="inv-header">
+            <div id="inv-screen-title" class="inv-title">🎒 インベントリ</div>
+            <div class="close-btn" onclick="toggleInventory()">閉じる</div>
+        </div>
+        <div id="holding-status"></div>
+        <div class="inv-container">
+            <div class="inv-section">
+                <div id="armor-slots-container">
+                    <div style="font-size:11px; color:#aaa; margin-bottom:3px;">装備インベントリ</div>
+                    <div class="armor-row"><span class="armor-label">頭:</span><div id="armor-slot-0" class="craft-slot"></div></div>
+                    <div class="armor-row"><span class="armor-label">胸:</span><div id="armor-slot-1" class="craft-slot"></div></div>
+                    <div class="armor-row"><span class="armor-label">脚:</span><div id="armor-slot-2" class="craft-slot"></div></div>
+                    <div class="armor-row"><span class="armor-label">足:</span><div id="armor-slot-3" class="craft-slot"></div></div>
+                    <div class="armor-row"><span class="armor-label">盾:</span><div id="armor-slot-4" class="craft-slot"></div></div>
+                </div>
+                <div class="section-title" style="font-size:11px; margin-bottom:3px;">インベントリ一覧</div>
+                <div id="bag-grid" class="grid-wrapper"></div>
+            </div>
+            
+            <div id="normal-craft-layout" class="inv-section craft-layout">
+                <div id="craft-box-title" class="section-title">クラフト</div>
+                <div id="craft-grid" class="craft-grid-dynamic"></div>
+                <button class="clear-btn" onclick="clearCraftGrid()">戻す</button>
+                <div class="craft-arrow-container">
+                    <div class="craft-arrow">➔</div>
+                    <div>
+                        <div id="craft-result-slot" class="craft-slot" style="width:50px; height:50px; margin-bottom:5px;"></div>
+                        <button id="craft-execute-btn" class="craft-action-btn" disabled onclick="triggerCraft()">合成</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="furnace-layout" class="inv-section craft-layout">
+                <div class="section-title">🔥 かまど精錬</div>
+                <div class="furnace-core">
+                    <div id="furnace-input-slot" class="craft-slot"></div>
+                    <div id="furnace-fire">▼</div>
+                    <div id="furnace-fuel-slot" class="craft-slot"></div>
+                </div>
+                <div class="craft-arrow-container">
+                    <div class="craft-arrow">➔</div>
+                    <div id="furnace-output-slot" class="craft-slot" style="width:50px; height:50px;"></div>
+                </div>
+                <div id="furnace-progress-text">精錬停止中</div>
+                <button class="clear-btn" onclick="clearFurnaceGrid()">戻す</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('touchmove', function(e) {
+            if(!e.target.closest('#bag-grid')) { e.preventDefault(); }
+        }, { passive: false });
+
+        function makeBase64Icon(drawFn) {
+            const canvas = document.createElement('canvas'); canvas.width = 16; canvas.height = 16;
+            const ctx = canvas.getContext('2d'); drawFn(ctx); return canvas.toDataURL();
+        }
+
+        const HUD_ICONS = {
+            heart_full: makeBase64Icon(c => { c.fillStyle="#ff2222"; c.fillRect(2,4,12,8); c.fillRect(4,2,3,2); c.fillRect(9,2,3,2); c.fillRect(3,12,10,2); c.fillRect(5,14,6,2); c.fillStyle="#ffffff"; c.fillRect(4,4,2,2); }),
+            heart_half: makeBase64Icon(c => { c.fillStyle="#ff2222"; c.fillRect(2,4,6,8); c.fillRect(4,2,3,2); c.fillRect(3,12,5,2); c.fillRect(5,14,3,2); c.fillStyle="#ffffff"; c.fillRect(4,4,2,2); c.fillStyle="#333333"; c.fillRect(8,4,6,8); c.fillRect(9,2,3,2); c.fillRect(8,12,5,2); c.fillRect(8,14,3,2); }),
+            heart_empty: makeBase64Icon(c => { c.fillStyle="#333333"; c.fillRect(2,4,12,8); c.fillRect(4,2,3,2); c.fillRect(9,2,3,2); c.fillRect(3,12,10,2); c.fillRect(5,14,6,2); }),
+            meat_full: makeBase64Icon(c => { c.fillStyle="#9c533c"; c.fillRect(4,3,9,10); c.fillRect(6,2,5,12); c.fillStyle="#ffffff"; c.fillRect(2,7,3,2); c.fillRect(3,6,2,4); }),
+            meat_half: makeBase64Icon(c => { c.fillStyle="#9c533c"; c.fillRect(4,3,5,10); c.fillRect(6,2,3,12); c.fillStyle="#ffffff"; c.fillRect(2,7,3,2); c.fillStyle="#333333"; c.fillRect(9,3,4,10); }),
+            meat_empty: makeBase64Icon(c => { c.fillStyle="#333333"; c.fillRect(4,3,9,10); c.fillRect(6,2,5,12); }),
+            armor_full: makeBase64Icon(c => { c.fillStyle="#cbd4d5"; c.fillRect(2,2,12,10); c.fillRect(4,12,8,3); c.fillStyle="#ffffff"; c.fillRect(4,4,2,4); }),
+            armor_half: makeBase64Icon(c => { c.fillStyle="#cbd4d5"; c.fillRect(2,2,6,10); c.fillRect(4,12,4,3); c.fillStyle="#333333"; c.fillRect(8,2,6,10); c.fillRect(8,12,4,3); }),
+            leather: makeBase64Icon(c => { c.fillStyle="#a0522d"; c.fillRect(3,2,10,12); c.fillRect(1,5,14,6); }),
+            helm: makeBase64Icon(c => { c.fillStyle="#cbd4d5"; c.fillRect(4,2,8,7); c.fillRect(2,5,12,5); }),
+            chest: makeBase64Icon(c => { c.fillStyle="#cbd4d5"; c.fillRect(2,3,12,11); c.fillRect(5,1,6,2); }),
+            legs: makeBase64Icon(c => { c.fillStyle="#cbd4d5"; c.fillRect(3,2,10,13); c.fillStyle="#000000"; c.fillRect(6,6,4,9); }),
+            boots: makeBase64Icon(c => { c.fillStyle="#cbd4d5"; c.fillRect(2,8,5,6); c.fillRect(9,8,5,6); }),
+            bed: makeBase64Icon(c => { c.fillStyle="#cc2222"; c.fillRect(1,4,14,6); c.fillStyle="#ffffff"; c.fillRect(1,2,5,8); }),
+            iron_ingot: makeBase64Icon(c => { c.fillStyle="#e2e6e7"; c.fillRect(3,4,10,7); c.fillStyle="#ffffff"; c.fillRect(4,5,8,1); c.fillStyle="#b0b7ba"; c.fillRect(3,11,10,1); }),
+            bucket_empty: makeBase64Icon(c => { c.fillStyle="#b0b7ba"; c.fillRect(3,3,2,8); c.fillRect(11,3,2,8); c.fillRect(5,11,6,2); }),
+            bucket_water: makeBase64Icon(c => { c.fillStyle="#b0b7ba"; c.fillRect(3,3,2,8); c.fillRect(11,3,2,8); c.fillRect(5,11,6,2); c.fillStyle="#4d7aff"; c.fillRect(5,5,6,6); }),
+            shield: makeBase64Icon(c => { c.fillStyle="#886b3f"; c.fillRect(3,2,10,10); c.fillRect(5,12,6,2); c.fillStyle="#b0b7ba"; c.fillRect(2,1,12,1); c.fillRect(2,2,1,10); c.fillRect(13,2,1,10); }),
+            
+            // 🍖 16x16 リアルで見分けやすいお肉グラフィック
+            mutton_raw: makeBase64Icon(c => { c.fillStyle="#e26a6a"; c.fillRect(4,3,8,9); c.fillStyle="#f3a4a4"; c.fillRect(5,4,4,3); c.fillStyle="#ffffff"; c.fillRect(2,11,4,2); c.fillRect(1,12,2,2); }),
+            mutton_cooked: makeBase64Icon(c => { c.fillStyle="#704125"; c.fillRect(4,3,8,9); c.fillStyle="#a0633b"; c.fillRect(5,4,4,3); c.fillStyle="#ddccbb"; c.fillRect(2,11,4,2); c.fillRect(1,12,2,2); }),
+            pork_raw: makeBase64Icon(c => { c.fillStyle="#ffa6a6"; c.fillRect(3,3,10,8); c.fillStyle="#ff7777"; c.fillRect(5,5,6,3); c.fillStyle="#ffffff"; c.fillRect(2,10,2,3); c.fillRect(12,10,2,3); }),
+            pork_cooked: makeBase64Icon(c => { c.fillStyle="#b56545"; c.fillRect(3,3,10,8); c.fillStyle="#844327"; c.fillRect(5,5,6,3); c.fillStyle="#eeddcc"; c.fillRect(2,10,2,3); c.fillRect(12,10,2,3); }),
+            beef_raw: makeBase64Icon(c => { c.fillStyle="#9e1313"; c.fillRect(2,2,12,10); c.fillStyle="#ffffff"; c.fillRect(4,4,2,6); c.fillRect(10,5,2,4); c.fillStyle="#dd5555"; c.fillRect(3,3,3,2); }),
+            beef_cooked: makeBase64Icon(c => { c.fillStyle="#4e2a16"; c.fillRect(2,2,12,10); c.fillStyle="#dcdcdc"; c.fillRect(4,4,2,6); c.fillStyle="#845134"; c.fillRect(3,3,3,2); })
+        };
+
+        const COLOR_MAP = {
+            grass_top:   ["#4c8727", "#549c32", "#5c9e32"], grass_side:  ["#866043", "#5c402b", "#735138"],             
+            dirt:        ["#866043", "#5c402b", "#735138"], stone:       ["#737373", "#616161", "#525252"], 
+            log_side:    ["#4d3826", "#3a291c", "#5c4533"], log_top:     ["#b1915a", "#9b7d4c"],             
+            leaves:      ["#1d3b0e", "#285115"], coal_ore:    ["#2c2c2c", "#1e1e1e"],             
+            planks:      ["#b1915a", "#9b7d4c"], sand:        ["#dfd19e", "#e4d9b4"],             
+            water:       ["#3f62c6", "#476efa"], bedrock:     ["#1a1a1a", "#0f0f0f"], wool:        ["#e5e5e5", "#f0f0f0"],
+            iron_ore:    ["#b3a294", "#9c8e82", "#cca184"]
+        };
+
+        function createPixelTexture(mode, localSeed) {
+            const canvas = document.createElement('canvas'); canvas.width = 16; canvas.height = 16;
+            const ctx = canvas.getContext('2d'); let seed = (localSeed || currentSeed) + mode.charCodeAt(0) * 7;
+            function rnd() { let x = Math.sin(seed++) * 10000; return x - Math.floor(x); }
+            const getCol = (arr) => arr[Math.floor(rnd() * arr.length)];
+            for(let y=0; y<16; y++) {
+                for(let x=0; x<16; x++) {
+                    if (mode === "grass_top") ctx.fillStyle = getCol(COLOR_MAP.grass_top);
+                    else if (mode === "grass_side") ctx.fillStyle = (y < 4 + Math.floor(rnd()*2)) ? getCol(COLOR_MAP.grass_top) : getCol(COLOR_MAP.grass_side);
+                    else if (mode === "dirt") ctx.fillStyle = getCol(COLOR_MAP.dirt);
+                    else if (mode === "stone") ctx.fillStyle = getCol(COLOR_MAP.stone);
+                    else if (mode === "log_side") ctx.fillStyle = getCol(COLOR_MAP.log_side);
+                    else if (mode === "log_top") ctx.fillStyle = getCol(COLOR_MAP.log_top);
+                    else if (mode === "leaves") ctx.fillStyle = getCol(COLOR_MAP.leaves);
+                    else if (mode === "coal") ctx.fillStyle = ((x+y)%5===0)?getCol(COLOR_MAP.coal_ore):getCol(COLOR_MAP.stone);
+                    else if (mode === "iron") ctx.fillStyle = ((x*y+x)%7===0)?getCol(COLOR_MAP.iron_ore):getCol(COLOR_MAP.stone);
+                    else if (mode === "planks") ctx.fillStyle = (y%4===0)? "#886b3f" : getCol(COLOR_MAP.planks);
+                    else if (mode === "sand") ctx.fillStyle = getCol(COLOR_MAP.sand);
+                    else if (mode === "water") ctx.fillStyle = getCol(COLOR_MAP.water);
+                    else if (mode === "bedrock") ctx.fillStyle = getCol(COLOR_MAP.bedrock);
+                    else if (mode === "wool") ctx.fillStyle = getCol(COLOR_MAP.wool);
+                    else if (mode === "crafting_top") ctx.fillStyle = (x===0||x===15||y===0||y===15)?"#4d3826":getCol(COLOR_MAP.planks);
+                    else if (mode === "crafting_side") ctx.fillStyle = (x===0||x===15||y===0||y===15)?"#4d3826":getCol(COLOR_MAP.planks);
+                    else if (mode === "furnace-side") ctx.fillStyle = getCol(COLOR_MAP.stone);
+                    else if (mode === "furnace-front") ctx.fillStyle = (x>=3&&x<=12&&y>=8&&y<=13)?"#151515":getCol(COLOR_MAP.stone);
+                    else if (mode === "bed_block") ctx.fillStyle = (x < 6) ? "#ffffff" : "#cc2222";
+                    ctx.fillRect(x, y, 1, 1);
+                }
+            }
+            return canvas.toDataURL();
+        }
+
+        function buildToolIcon(type) {
+            if (HUD_ICONS[type]) return HUD_ICONS[type];
+            const canvas = document.createElement('canvas'); canvas.width = 16; canvas.height = 16;
+            const ctx = canvas.getContext('2d'); ctx.clearRect(0,0,16,16); const stickCol = "#54402a";
+            if (type === "石炭アイテム") { ctx.fillStyle = "#1e1e1e"; ctx.fillRect(5,3,6,9); return canvas.toDataURL(); }
+            if (type === "棒") { for(let i=2; i<14; i++) { ctx.fillStyle = stickCol; ctx.fillRect(i, 15-i, 1, 1); } return canvas.toDataURL(); }
+            
+            let headCols = ["#b1915a", "#cfb07c"];
+            if(type.includes("石の")) headCols = ["#737373", "#8a8a8a"];
+            if(type.includes("鉄の")) headCols = ["#e2e6e7", "#ffffff"];
+            
+            for(let i=2; i<12; i++) { ctx.fillStyle = stickCol; ctx.fillRect(i, 15-i, 1, 1); }
+            ctx.fillStyle = headCols[0]; 
+            if (type.includes("ツルハシ")) ctx.fillRect(10,2,5,2); 
+            else if (type.includes("シャベル")) ctx.fillRect(12,2,3,3); 
+            else if (type.includes("剣")) ctx.fillRect(8,2,6,2);
+            else if (type.includes("斧")) ctx.fillRect(11,2,4,4);
+            return canvas.toDataURL();
+        }
+
+        const ITEMS = {
+            0: { name: '草ブロック', type: 'block', img: createPixelTexture("grass_top", 1), blockId: 0 },
+            1: { name: '土ブロック', type: 'block', img: createPixelTexture("dirt", 1), blockId: 1 },
+            2: { name: '石ブロック', type: 'block', img: createPixelTexture("stone", 1), blockId: 2 }, 
+            3: { name: '原木',       type: 'block', img: createPixelTexture("log_side", 1), blockId: 3, fuelTime: 15 }, 
+            4: { name: '木のツルハシ', type: 'pick', img: buildToolIcon("木のツルハシ"), toolType: 'pick', tier: 1.5, fuelTime: 10, attackPower: 2 },
+            5: { name: '石のツルハシ', type: 'pick', img: buildToolIcon("石のツルハシ"), toolType: 'pick', tier: 3.0 },
+            6: { name: '木のシャベル', type: 'shovel', img: buildToolIcon("木のシャベル"), toolType: 'shovel', tier: 1.5, fuelTime: 10 },
+            7: { name: '葉っぱ',     type: 'block', img: createPixelTexture("leaves", 1), blockId: 7 },
+            8: { name: '石炭鉱石',   type: 'block', img: createPixelTexture("coal", 1), blockId: 8 },
+            9: { name: '木材',       type: 'block', img: createPixelTexture("planks", 1), blockId: 9, fuelTime: 15 },
+            10:{ name: '棒',         type: 'stick', img: buildToolIcon("棒"), fuelTime: 5 },
+            11:{ name: '作業台',     type: 'block', img: createPixelTexture("crafting_top", 1), blockId: 11 },
+            12:{ name: '砂ブロック', type: 'block', img: createPixelTexture("sand", 1), blockId: 12 },
+            13:{ name: '水ブロック', type: 'block', img: createPixelTexture("water", 1), blockId: 13 },
+            14:{ name: '岩盤層',     type: 'block', img: createPixelTexture("bedrock", 1), blockId: 14 },
+            15:{ name: '石のシャベル', type: 'shovel', img: buildToolIcon("石のシャベル"), toolType: 'shovel', tier: 3.0 },
+            16:{ name: '木の斧',     type: 'axe', img: buildToolIcon("木の斧"), toolType: 'axe', tier: 1.5, fuelTime: 10 },
+            17:{ name: '石の斧',     type: 'axe', img: buildToolIcon("石の斧"), toolType: 'axe', tier: 3.0 },
+            18:{ name: '木の剣',     type: 'sword', img: buildToolIcon("木の剣"), toolType: 'sword', attackPower: 4, fuelTime: 10 },
+            19:{ name: '石の剣',     type: 'sword', img: buildToolIcon("石の剣"), toolType: 'sword', attackPower: 5 },
+            20:{ name: '石炭',       type: 'material', img: buildToolIcon("石炭アイテム"), fuelTime: 80 }, 
+            21:{ name: '羊毛',       type: 'block', img: createPixelTexture("wool", 1), blockId: 21 },
+            
+            // 🍖 アップデートされた16x16リアル肉
+            22:{ name: '生の羊肉',   type: 'food', img: HUD_ICONS.mutton_raw, healHunger: 2 }, 
+            23:{ name: '焼き羊肉',   type: 'food', img: HUD_ICONS.mutton_cooked, healHunger: 6 },
+            24:{ name: 'かまど',     type: 'block', img: createPixelTexture("furnace-front", 1), blockId: 24 },
+            25:{ name: '皮',         type: 'material', img: HUD_ICONS.leather },
+            26:{ name: '生の豚肉',   type: 'food', img: HUD_ICONS.pork_raw, healHunger: 3 },
+            27:{ name: '焼き豚',     type: 'food', img: HUD_ICONS.pork_cooked, healHunger: 8 },
+            28:{ name: '生の牛肉',   type: 'food', img: HUD_ICONS.beef_raw, healHunger: 3 },
+            29:{ name: 'ステーキ',   type: 'food', img: HUD_ICONS.beef_cooked, healHunger: 8 },
+            
+            30:{ name: '皮のヘルメット', type: 'armor', slot: 0, armorValue: 1, img: HUD_ICONS.helm },
+            31:{ name: '皮のチェストプレート', type: 'armor', slot: 1, armorValue: 3, img: HUD_ICONS.chest },
+            32:{ name: '皮のレギンス', type: 'armor', slot: 2, armorValue: 2, img: HUD_ICONS.legs },
+            33:{ name: '皮のブーツ',   type: 'armor', slot: 3, armorValue: 1, img: HUD_ICONS.boots },
+            34:{ name: 'ベッド',     type: 'block', img: HUD_ICONS.bed, blockId: 34 },
+            35:{ name: '鉄鉱石',     type: 'block', img: createPixelTexture("iron", 1), blockId: 35 },
+            36:{ name: '鉄インゴット', type: 'material', img: HUD_ICONS.iron_ingot },
+            37:{ name: '鉄のツルハシ', type: 'pick', img: buildToolIcon("鉄のツルハシ"), toolType: 'pick', tier: 5.0 },
+            38:{ name: '鉄のシャベル', type: 'shovel', img: buildToolIcon("鉄のシャベル"), toolType: 'shovel', tier: 5.0 },
+            39:{ name: '鉄の斧',     type: 'axe', img: buildToolIcon("鉄の斧"), toolType: 'axe', tier: 5.0 },
+            40:{ name: '鉄の剣',     type: 'sword', img: buildToolIcon("鉄の剣"), toolType: 'sword', attackPower: 6 },
+            41:{ name: '鉄のヘルメット', type: 'armor', slot: 0, armorValue: 2, img: makeBase64Icon(c => { c.fillStyle="#e2e6e7"; c.fillRect(4,2,8,7); c.fillRect(2,5,12,5); }) },
+            42:{ name: '鉄のチェストプレート', type: 'armor', slot: 1, armorValue: 6, img: makeBase64Icon(c => { c.fillStyle="#e2e6e7"; c.fillRect(2,3,12,11); c.fillRect(5,1,6,2); }) },
+            43:{ name: '鉄のレギンス', type: 'armor', slot: 2, armorValue: 5, img: makeBase64Icon(c => { c.fillStyle="#e2e6e7"; c.fillRect(3,2,10,13); c.fillStyle="#000000"; c.fillRect(6,6,4,9); }) },
+            44:{ name: '鉄のブーツ',   type: 'armor', slot: 3, armorValue: 2, img: makeBase64Icon(c => { c.fillStyle="#e2e6e7"; c.fillRect(2,8,5,6); c.fillRect(9,8,5,6); }) },
+            45:{ name: 'バケツ',     type: 'bucket', img: HUD_ICONS.bucket_empty },
+            46:{ name: '水入りバケツ', type: 'bucket_water', img: HUD_ICONS.bucket_water },
+            47:{ name: '盾',         type: 'shield', slot: 4, armorValue: 2, img: HUD_ICONS.shield }
+        };
+
+        const BLOCK_PROPERTIES = {
+            0: { tool: 'shovel', hardness: 0.7 }, 1: { tool: 'shovel', hardness: 0.6 }, 12:{ tool: 'shovel', hardness: 0.6 }, 
+            2: { tool: 'pick',   hardness: 2.2 }, 8: { tool: 'pick',   hardness: 2.5 }, 24:{ tool: 'pick',   hardness: 3.0 }, 
+            3: { tool: 'axe',    hardness: 1.5 }, 9: { tool: 'axe',    hardness: 1.2 }, 11:{ tool: 'axe',    hardness: 1.5 }, 
+            7: { tool: 'any',    hardness: 0.3 }, 21:{ tool: 'any',    hardness: 0.5 }, 13:{ tool: 'none',   hardness: 999 }, 14:{ tool: 'none',   hardness: 9999 },
+            34:{ tool: 'any',    hardness: 0.8 }, 35:{ tool: 'pick',   hardness: 3.2 }
+        };
+
+        let currentSeed = 54321; let gamePaused = false; let isInitialized = false;
+        let hotbar = Array(27).fill(null); let activeSlot = 0;
+        let armorSlots = Array(5).fill(null); let renderDistance = 2;
+        let isUsingCraftingTable = false; let isUsingFurnace = false;
+        let craftSize = 2; let craftGrid = Array(9).fill(null);
+        
+        let furnaceData = { input: null, fuel: null, output: null, burnTimeLeft: 0, maxBurnTime: 0, cookProgress: 0, maxCookProgress: 8 };
+        let holdingItem = null; let currentCraftMatch = null;
+        let miningTarget = null; let miningProgress = 0; let isMiningPressed = false;
+        let canAttack = true;
+
+        let gameTime = 6000; 
+        let ambientLight, sunLight;
+
+        let mobs = []; const MAX_MOBS = 8; let fpsCount = 0; let fpsTimer = 0;
+        const chunkSize = 8; let scene, meshes, maxInstancesPerMesh = 25000; let renderer, camera;
+
+        let spawnPoint = { x: 4.5, y: 22, z: 4.5 }; 
+
+        let playerPhysics = { 
+            x: 4.5, y: 22, z: 4.5, vx: 0, vy: 0, vz: 0, radius: 0.3, height: 1.65, eyeHeight: 1.5,  
+            knockbackX: 0, knockbackZ: 0, 
+            isGrounded: false, hp: 20, maxHp: 20, hunger: 20, maxHunger: 20, oxygen: 300, maxOxygen: 300,
+            invincibleTimer: 0, hungerExhaustion: 0 
+        };
+
+        const ALL_RECIPES = [
+            { name: "木材", resultId: 9, count: 4, shape: [[3]], minGrid: 2 },
+            { name: "作業台", resultId: 11, count: 1, shape: [[9, 9], [9, 9]], minGrid: 2 },
+            { name: "棒", resultId: 10, count: 4, shape: [[9], [9]], minGrid: 2 },
+            { name: "かまど", resultId: 24, count: 1, shape: [[2, 2, 2],[2, 0, 2],[2, 2, 2]], minGrid: 3 },
+            { name: "木のツルハシ", resultId: 4, count: 1, shape: [[9, 9, 9],[0, 10, 0],[0, 10, 0]], minGrid: 3 },
+            { name: "石のツルハシ", resultId: 5, count: 1, shape: [[2, 2, 2],[0, 10, 0],[0, 10, 0]], minGrid: 3 },
+            { name: "皮のヘルメット", resultId: 30, count: 1, shape: [[25,25,25],[25,0,25]], minGrid: 3 },
+            { name: "皮のチェストプレート", resultId: 31, count: 1, shape: [[25,0,25],[25,25,25],[25,25,25]], minGrid: 3 },
+            { name: "皮のレギンス", resultId: 32, count: 1, shape: [[25,25,25],[25,0,25],[25,0,25]], minGrid: 3 },
+            { name: "皮のブーツ", resultId: 33, count: 1, shape: [[25,0,25],[25,0,25]], minGrid: 3 },
+            { name: "ベッド", resultId: 34, count: 1, shape: [[21, 21, 21], [9, 9, 9]], minGrid: 3 },
+            { name: "鉄のツルハシ", resultId: 37, count: 1, shape: [[36, 36, 36],[0, 10, 0],[0, 10, 0]], minGrid: 3 },
+            { name: "鉄のシャベル", resultId: 38, count: 1, shape: [[36],[10],[10]], minGrid: 3 },
+            { name: "鉄の斧", resultId: 39, count: 1, shape: [[36, 36],[36, 10],[0, 10]], minGrid: 3 },
+            { name: "鉄の剣", resultId: 40, count: 1, shape: [[36],[36],[10]], minGrid: 3 },
+            { name: "鉄のヘルメット", resultId: 41, count: 1, shape: [[36,36,36],[36,0,36]], minGrid: 3 },
+            { name: "鉄のチェストプレート", resultId: 42, count: 1, shape: [[36,0,36],[36,36,36],[36,36,36]], minGrid: 3 },
+            { name: "鉄のレギンス", resultId: 43, count: 1, shape: [[36,36,36],[36,0,36],[36,0,36]], minGrid: 3 },
+            { name: "鉄のブーツ", resultId: 44, count: 1, shape: [[36,0,36],[36,0,36]], minGrid: 3 },
+            { name: "バケツ", resultId: 45, count: 1, shape: [[36,0,36],[0,36,0]], minGrid: 3 },
+            { name: "盾", resultId: 47, count: 1, shape: [[9,36,9],[9,9,9],[0,9,0]], minGrid: 3 }
+        ];
+
+        const SMELTING_RECIPES = { 22: { resultId: 23 }, 26: { resultId: 27 }, 28: { resultId: 29 }, 35: { resultId: 36 } };
+        let worldBlocks = new Map(); let loadedChunks = new Set();
+        let lon = 0, lat = 0, phi = 0, theta = 0;
+
+        let touchTimer = null;
+        let isLongPressing = false;
+        let lastInteractedSlotElement = null;
+
+        function blockKey(x, y, z) { return `${Math.floor(x)},${Math.floor(y)},${Math.floor(z)}`; }
+        function generateSaveCode() { return btoa(JSON.stringify({ seed: currentSeed, hotbar: hotbar, armor: armorSlots, hp: playerPhysics.hp, hunger: playerPhysics.hunger, pos: {x: playerPhysics.x, y: playerPhysics.y, z: playerPhysics.z}, spawn: spawnPoint, time: gameTime })); }
+        function loadWithSaveCode() { try { let decoded = JSON.parse(atob(document.getElementById('savecode-input').value.trim())); if(decoded.seed){ currentSeed=decoded.seed; hotbar=decoded.hotbar; armorSlots=decoded.armor||Array(5).fill(null); playerPhysics.hunger=decoded.hunger; playerPhysics.x=decoded.pos.x; playerPhysics.y=decoded.pos.y; playerPhysics.z=decoded.pos.z; if(decoded.spawn) spawnPoint=decoded.spawn; if(decoded.time) gameTime=decoded.time; worldBlocks.clear(); launchWorld(); } }catch(e){alert("コード無効");} }
+        
+        function changeRenderDistance(val) { 
+            renderDistance = parseInt(val, 10); 
+            if(scene && scene.fog) { let distInBlocks = renderDistance * chunkSize * 1.3; scene.fog.density = 1.0 / distInBlocks; }
+            resetWorldChunks(); 
+        }
+        function resetWorldChunks() { loadedChunks.clear(); if(window.updateLoadedChunks) window.updateLoadedChunks(); }
+        function backToHome() { gamePaused = true; document.getElementById('pause-screen').style.display = 'none'; document.getElementById('home-screen').style.display = 'flex'; }
+        function generateItemHTML(item) { if (!item) return ''; return `<img src="${ITEMS[item.id].img}" class="pixel-art"><span class="slot-count">${item.count > 1 ? item.count : ''}</span>`; }
+
+        function updateGraphicalHUD() {
+            const hBar = document.getElementById('heart-bar'); hBar.innerHTML = '';
+            for(let i=0; i<10; i++) {
+                let img = document.createElement('img'); img.className = "hud-pixel-icon";
+                img.src = (playerPhysics.hp >= (i+1)*2) ? HUD_ICONS.heart_full : ((playerPhysics.hp === i*2+1) ? HUD_ICONS.heart_half : HUD_ICONS.heart_empty);
+                hBar.appendChild(img);
+            }
+            const fBar = document.getElementById('food-bar'); fBar.innerHTML = '';
+            for(let i=0; i<10; i++) {
+                let img = document.createElement('img'); img.className = "hud-pixel-icon";
+                img.src = (playerPhysics.hunger >= (i+1)*2) ? HUD_ICONS.meat_full : ((playerPhysics.hunger === i*2+1) ? HUD_ICONS.meat_half : HUD_ICONS.meat_empty);
+                fBar.appendChild(img);
+            }
+            const aBar = document.getElementById('armor-bar'); aBar.innerHTML = '';
+            let totalArmor = 0; armorSlots.forEach(s => { if(s) totalArmor += ITEMS[s.id].armorValue || 0; });
+            if(totalArmor > 0) {
+                for(let i=0; i<10; i++) {
+                    let img = document.createElement('img'); img.className = "hud-pixel-icon";
+                    if(totalArmor >= (i+1)*2) img.src = HUD_ICONS.armor_full;
+                    else if(totalArmor === i*2+1) img.src = HUD_ICONS.armor_half;
+                    else break;
+                    aBar.appendChild(img);
+                }
+            }
+        }
+
+        function renderHotbar() {
+            const hb = document.getElementById('hotbar'); hb.innerHTML = '';
+            for(let i=0; i<9; i++) {
+                const item = hotbar[i]; const slot = document.createElement('div');
+                slot.className = `ui-slot ${i === activeSlot ? 'active' : ''}`; slot.onclick = () => { activeSlot = i; renderHotbar(); updateButtonUI(); };
+                if(item) slot.innerHTML = generateItemHTML(item); hb.appendChild(slot);
+            }
+            updateGraphicalHUD();
+        }
+
+        function mergeToHotbar(id, amount) {
+            let left = amount;
+            for(let i=0; i<27; i++) { if(hotbar[i] && hotbar[i].id === id && hotbar[i].count < 64) { let space = 64 - hotbar[i].count; let add = Math.min(space, left); hotbar[i].count += add; left -= add; if(left <= 0) break; } }
+            if(left > 0) { for(let i=0; i<27; i++) { if(!hotbar[i]) { hotbar[i] = { id: id, count: left }; left = 0; break; } } }
+        }
+
+        function updateButtonUI() {
+            const btn = document.getElementById('btn-use'); const item = hotbar[activeSlot];
+            if (item) {
+                if (ITEMS[item.id].type === 'block') {
+                    if (item.id === 11 || item.id === 24) btn.innerHTML = `🛠️<div>開く</div>`;
+                    else if (item.id === 34) btn.innerHTML = `🛌<div>眠る/設置</div>`;
+                    else btn.innerHTML = `🧱<div>設置</div>`;
+                }
+                else if (ITEMS[item.id].type === 'food') btn.innerHTML = `🍖<div>食べる</div>`;
+                else if (ITEMS[item.id].type === 'armor' || ITEMS[item.id].type === 'shield') btn.innerHTML = `🛡️<div>装備</div>`;
+                else if (ITEMS[item.id].type === 'bucket' || ITEMS[item.id].type === 'bucket_water') btn.innerHTML = `🪣<div>使用</div>`;
+                else btn.innerHTML = `✋<div>使用</div>`;
+            } else { btn.innerHTML = `✋<div>使用</div>`; }
+        }
+
+        function useOrEquipItem() {
+            const item = hotbar[activeSlot]; if(!item) return;
+            if(ITEMS[item.id].type === 'food') {
+                if (playerPhysics.hunger >= 20) return; 
+                playerPhysics.hunger = Math.min(20, playerPhysics.hunger + ITEMS[item.id].healHunger);
+                item.count--; if (item.count <= 0) hotbar[activeSlot] = null;
+            } else if(ITEMS[item.id].type === 'armor' || ITEMS[item.id].type === 'shield') {
+                let sIdx = ITEMS[item.id].slot; let tmp = armorSlots[sIdx];
+                armorSlots[sIdx] = { id: item.id, count: 1 }; item.count--; if(item.count <= 0) hotbar[activeSlot] = null;
+                if(tmp) mergeToHotbar(tmp.id, 1);
+            }
+            renderHotbar(); updateButtonUI();
+        }
+
+        function toggleInventory() {
+            const scr = document.getElementById('inventory-screen');
+            if(scr.style.display === 'flex') {
+                if (holdingItem) { mergeToHotbar(holdingItem.id, holdingItem.count); holdingItem = null; }
+                scr.style.display = 'none'; isUsingCraftingTable = false; isUsingFurnace = false;
+            } else { setupUILayoutMode(); scr.style.display = 'flex'; refreshInventoryUI(); }
+            renderHotbar(); saveWorldState();
+        }
+
+        function setupUILayoutMode() {
+            const title = document.getElementById('inv-screen-title'); const normalCraft = document.getElementById('normal-craft-layout');
+            const furnaceLayout = document.getElementById('furnace-layout'); const grid = document.getElementById('craft-grid');
+            if (isUsingFurnace) { normalCraft.style.display = "none"; furnaceLayout.style.display = "flex"; title.innerText = "🔥 かまど精錬"; } 
+            else {
+                normalCraft.style.display = "flex"; furnaceLayout.style.display = "none"; craftSize = isUsingCraftingTable ? 3 : 2;
+                title.innerText = isUsingCraftingTable ? "🛠️ 作業台 (3x3)" : "🎒 インベントリ (2x2)"; grid.style.gridTemplateColumns = `repeat(${craftSize}, 44px)`;
+            }
+        }
+
+        function handleSlotTap(type, idx) {
+            let target = getTargetGridArray(type);
+            if (holdingItem) {
+                if (!target[idx]) { target[idx] = holdingItem; holdingItem = null; }
+                else if (target[idx].id === holdingItem.id && target[idx].count < 64) { target[idx].count += holdingItem.count; holdingItem = null; }
+                else { let tmp = target[idx]; target[idx] = holdingItem; holdingItem = tmp; }
+            } else { if (target[idx]) { holdingItem = target[idx]; target[idx] = null; } }
+            refreshInventoryUI();
+        }
+
+        function handleSlotLongPressHalf(type, idx) {
+            let target = getTargetGridArray(type);
+            if (!holdingItem && target[idx]) {
+                let current = target[idx];
+                let takeCount = Math.ceil(current.count / 2);
+                let keepCount = current.count - takeCount;
+                holdingItem = { id: current.id, count: takeCount };
+                if (keepCount <= 0) { target[idx] = null; } else { current.count = keepCount; }
+                refreshInventoryUI();
+            }
+        }
+
+        function handleSlotPlaceOne(type, idx) {
+            if (!holdingItem) return;
+            let target = getTargetGridArray(type);
+            if (type === 4) return; 
+            if (!target[idx]) {
+                target[idx] = { id: holdingItem.id, count: 1 };
+                holdingItem.count--;
+            } else if (target[idx].id === holdingItem.id && target[idx].count < 64) {
+                target[idx].count++;
+                holdingItem.count--;
+            }
+            if (holdingItem.count <= 0) holdingItem = null;
+            refreshInventoryUI();
+        }
+
+        function getTargetGridArray(type) {
+            if (type === 0) return hotbar;
+            if (type === 1) return craftGrid;
+            if (type === 2) return [furnaceData.input];
+            if (type === 3) return [furnaceData.fuel];
+            if (type === 4) return [furnaceData.output];
+            return hotbar;
+        }
+
+        function syncFurnaceData(type, idx, val) {
+            if (type === 2) furnaceData.input = val[0];
+            if (type === 3) furnaceData.fuel = val[0];
+            if (type === 4) furnaceData.output = val[0];
+        }
+
+        function bindTouchEventsToSlot(el, type, idx) {
+            el.addEventListener('touchstart', (e) => {
+                e.preventDefault(); isLongPressing = false; lastInteractedSlotElement = el;
+                touchTimer = setTimeout(() => {
+                    isLongPressing = true;
+                    if (!holdingItem) {
+                        if (type >= 2 && type <= 4) { let arr = getTargetGridArray(type); handleSlotLongPressHalf(type, 0); syncFurnaceData(type, 0, arr); } 
+                        else { handleSlotLongPressHalf(type, idx); }
+                    } else {
+                        if (type >= 2 && type <= 4) { let arr = getTargetGridArray(type); handleSlotPlaceOne(type, 0); syncFurnaceData(type, 0, arr); } 
+                        else { handleSlotPlaceOne(type, idx); }
+                    }
+                }, 400);
+            }, { passive: false });
+
+            el.addEventListener('touchmove', (e) => {
+                if (!holdingItem || !isLongPressing) return;
+                let touch = e.touches[0]; let targetEl = document.elementFromPoint(touch.clientX, touch.clientY);
+                if (targetEl && (targetEl.classList.contains('craft-slot') || targetEl.classList.contains('ui-slot'))) {
+                    if (targetEl !== lastInteractedSlotElement) {
+                        lastInteractedSlotElement = targetEl;
+                        if (targetEl.dataset.type !== undefined) {
+                            let t = parseInt(targetEl.dataset.type, 10); let i = parseInt(targetEl.dataset.idx, 10); let arr = getTargetGridArray(t);
+                            if (t >= 2 && t <= 4) { handleSlotPlaceOne(t, 0); syncFurnaceData(t, 0, arr); } 
+                            else { handleSlotPlaceOne(t, i); }
+                        }
+                    }
+                }
+            }, { passive: false });
+
+            el.addEventListener('touchend', (e) => {
+                clearTimeout(touchTimer);
+                if (!isLongPressing) {
+                    if (type >= 2 && type <= 4) {
+                        let arr = getTargetGridArray(type);
+                        if (holdingItem) {
+                            if (!arr[0]) { arr[0] = holdingItem; holdingItem = null; }
+                            else if (arr[0].id === holdingItem.id && arr[0].count < 64) { arr[0].count += holdingItem.count; holdingItem = null; }
+                            else { let tmp = arr[0]; arr[0] = holdingItem; holdingItem = tmp; }
+                        } else { if (arr[0]) { holdingItem = arr[0]; arr[0] = null; } }
+                        syncFurnaceData(type, 0, arr); refreshInventoryUI();
+                    } else { handleSlotTap(type, idx); }
+                }
+                isLongPressing = false;
+            }, { passive: false });
+        }
+
+        function handleArmorSlotTap(idx) {
+            if(holdingItem && ((ITEMS[holdingItem.id].type === 'armor' && ITEMS[holdingItem.id].slot === idx) || (ITEMS[holdingItem.id].type === 'shield' && idx === 4))) {
+                let tmp = armorSlots[idx]; armorSlots[idx] = { id: holdingItem.id, count: 1 };
+                holdingItem.count--; if(holdingItem.count <= 0) holdingItem = null; if(tmp) mergeToHotbar(tmp.id, 1);
+            } else if(!holdingItem && armorSlots[idx]) { holdingItem = armorSlots[idx]; armorSlots[idx] = null; }
+            refreshInventoryUI();
+        }
+
+        function renderInventoryScreen() {
+            const grid = document.getElementById('bag-grid'); grid.innerHTML = '';
+            for(let i=0; i<27; i++) {
+                const slot = document.createElement('div'); slot.className = 'ui-slot'; if(hotbar[i]) slot.innerHTML = generateItemHTML(hotbar[i]);
+                slot.dataset.type = 0; slot.dataset.idx = i; bindTouchEventsToSlot(slot, 0, i); grid.appendChild(slot);
+            }
+            for(let i=0; i<5; i++) {
+                let aslot = document.getElementById(`armor-slot-${i}`);
+                aslot.innerHTML = armorSlots[i] ? generateItemHTML(armorSlots[i]) : ''; aslot.onclick = () => handleArmorSlotTap(i);
+            }
+            if (!isUsingFurnace) {
+                const cgrid = document.getElementById('craft-grid'); cgrid.innerHTML = '';
+                for(let i=0; i<craftSize*craftSize; i++) {
+                    const slot = document.createElement('div'); slot.className = 'craft-slot'; if(craftGrid[i]) slot.innerHTML = generateItemHTML(craftGrid[i]);
+                    slot.dataset.type = 1; slot.dataset.idx = i; bindTouchEventsToSlot(slot, 1, i); cgrid.appendChild(slot);
+                }
+            } else {
+                let fi = document.getElementById('furnace-input-slot'); fi.innerHTML = furnaceData.input ? generateItemHTML(furnaceData.input) : ''; fi.dataset.type = 2; fi.dataset.idx = 0; bindTouchEventsToSlot(fi, 2, 0);
+                let ff = document.getElementById('furnace-fuel-slot'); ff.innerHTML = furnaceData.fuel ? generateItemHTML(furnaceData.fuel) : ''; ff.dataset.type = 3; ff.dataset.idx = 0; bindTouchEventsToSlot(ff, 3, 0);
+                let fo = document.getElementById('furnace-output-slot'); fo.innerHTML = furnaceData.output ? generateItemHTML(furnaceData.output) : ''; fo.dataset.type = 4; fo.dataset.idx = 0; bindTouchEventsToSlot(fo, 4, 0);
+                document.getElementById('furnace-fire').innerText = furnaceData.burnTimeLeft > 0 ? "🔥" : "▼";
+            }
+        }
+
+        function refreshInventoryUI() { const el = document.getElementById('holding-status'); if(holdingItem){ el.innerHTML=`🛒 つまみ中: <b>${ITEMS[holdingItem.id].name}</b> x${holdingItem.count}`; el.style.display="block"; }else{ el.style.display="none"; } renderInventoryScreen(); if(!isUsingFurnace) checkCraftRecipe(); renderHotbar(); }
+        function clearCraftGrid() { for(let i=0; i<9; i++) { if(craftGrid[i]) { mergeToHotbar(craftGrid[i].id, craftGrid[i].count); craftGrid[i] = null; } } refreshInventoryUI(); }
+        function clearFurnaceGrid() { if(furnaceData.input){ mergeToHotbar(furnaceData.input.id, furnaceData.input.count); furnaceData.input=null; } if(furnaceData.fuel){ mergeToHotbar(furnaceData.fuel.id, furnaceData.fuel.count); furnaceData.fuel=null; } refreshInventoryUI(); }
+
+        function checkCraftRecipe() {
+            let grid2D = (craftSize===2) ? [[craftGrid[0]?craftGrid[0].id:0, craftGrid[1]?craftGrid[1].id:0],[craftGrid[2]?craftGrid[2].id:0, craftGrid[3]?craftGrid[3].id:0]] : [[craftGrid[0]?craftGrid[0].id:0, craftGrid[1]?craftGrid[1].id:0, craftGrid[2]?craftGrid[2].id:0],[craftGrid[3]?craftGrid[3].id:0, craftGrid[4]?craftGrid[4].id:0, craftGrid[5]?craftGrid[5].id:0],[craftGrid[6]?craftGrid[6].id:0, craftGrid[7]?craftGrid[7].id:0, craftGrid[8]?craftGrid[8].id:0]];
+            let minR = 99, maxR = -99, minC = 99, maxC = -99, hasItem = false;
+            for(let r=0; r<craftSize; r++) { for(let c=0; c<craftSize; c++) { if(grid2D[r][c]!==0) { minR=Math.min(minR,r); maxR=Math.max(maxR,r); minC=Math.min(minC,c); maxC=Math.max(maxC,c); hasItem=true; } } }
+            const rSlot = document.getElementById('craft-result-slot'); const eBtn = document.getElementById('craft-execute-btn');
+            if(!hasItem) { rSlot.innerHTML = ''; eBtn.disabled = true; currentCraftMatch = null; return; }
+            let cur = []; for(let r=minR; r<=maxR; r++) { let row=[]; for(let c=minC; c<=maxC; c++) row.push(grid2D[r][c]); cur.push(row); }
+            currentCraftMatch = null;
+            for(let recipe of ALL_RECIPES) {
+                if (craftSize < recipe.minGrid) continue;
+                let shp = recipe.shape; if(cur.length === shp.length && cur[0].length === shp[0].length) {
+                    let match = true; for(let i=0; i<cur.length; i++) { for(let j=0; j<cur[i].length; j++) { if(cur[i][j] !== shp[i][j]) match = false; } }
+                    if(match) { currentCraftMatch = recipe; break; }
+                }
+            }
+            if(currentCraftMatch) { rSlot.innerHTML = generateItemHTML({ id: currentCraftMatch.resultId, count: currentCraftMatch.count }); eBtn.disabled = false; } 
+            else { rSlot.innerHTML = ''; eBtn.disabled = true; }
+        }
+
+        function triggerCraft() { if(!currentCraftMatch) return; for(let i=0; i<craftSize*craftSize; i++) { if(craftGrid[i]) { craftGrid[i].count--; if(craftGrid[i].count<=0) craftGrid[i]=null; } } mergeToHotbar(currentCraftMatch.resultId, currentCraftMatch.count); refreshInventoryUI(); }
+        function gainItem(id) { mergeToHotbar((id===8)?20:id, 1); renderHotbar(); saveWorldState(); }
+        function togglePause() { const p = document.getElementById('pause-screen'); if (p.style.display === 'flex') { p.style.display = 'none'; gamePaused = false; } else { p.style.display = 'flex'; gamePaused = true; saveWorldState(); } }
+        function saveWorldState() { try { document.getElementById('savecode-output').value = generateSaveCode(); } catch(e) {} }
+
+        function executePlayerDeathRespawn() {
+            const flash = document.getElementById('damage-flash'); flash.style.background = "rgba(150, 0, 0, 0.9)"; 
+            setTimeout(() => {
+                playerPhysics.hp = playerPhysics.maxHp; playerPhysics.hunger = playerPhysics.maxHunger; playerPhysics.oxygen = playerPhysics.maxOxygen;
+                playerPhysics.vx = 0; playerPhysics.vy = 0; playerPhysics.vz = 0; playerPhysics.knockbackX = 0; playerPhysics.knockbackZ = 0; playerPhysics.invincibleTimer = 1.0; 
+                playerPhysics.x = spawnPoint.x; playerPhysics.y = spawnPoint.y; playerPhysics.z = spawnPoint.z;
+                mobs.forEach(m => { m.isHostile = false; });
+                flash.style.background = "transparent"; updateGraphicalHUD(); window.updateLoadedChunks();
+            }, 500);
+        }
+
+        function clickStartGame() {
+            let input = document.getElementById('seed-input').value; 
+            currentSeed = input !== "" ? parseInt(input, 10) : Math.floor(Math.random() * 899999 + 100000);
+            spawnPoint = { x: 4.5, y: 22, z: 4.5 }; playerPhysics.x = 4.5; playerPhysics.y = 22; playerPhysics.z = 4.5; playerPhysics.hp = 20; playerPhysics.hunger = 20; playerPhysics.invincibleTimer = 0;
+            gameTime = 6000; worldBlocks.clear(); launchWorld();
+        }
+
+        function launchWorld() {
+            document.getElementById('home-screen').style.display = 'none'; document.getElementById('pause-screen').style.display = 'none';
+            document.getElementById('crosshair').style.display = 'block'; document.getElementById('survival-ui').style.display = 'block';
+            document.getElementById('pause-trigger').style.display = 'block'; document.getElementById('touch-controls-left').style.display = 'block';
+            document.getElementById('touch-controls-right').style.display = 'block'; document.getElementById('bottom-ui-wrapper').style.display = 'flex';
+            document.getElementById('hud-seed').innerText = `SEED: ${currentSeed}`;
+            renderHotbar(); updateButtonUI(); gamePaused = false;
+            if (!isInitialized) { initGame(); isInitialized = true; } else { resetWorldChunks(); }
+        }
+
+        function pseudoRandom2D(x, z, s) { let n = Math.sin(x * 12.9898 + z * 78.233 + s) * 43758.5453; return n - Math.floor(n); }
+        function getClimate(x, z) { 
+            let v = Math.sin(x * 0.0035 + (currentSeed % 99)) * Math.cos(z * 0.0035 + (currentSeed % 66)); 
+            if (v > 0.4) return "砂漠"; if (v < -0.45) return "海"; if (v >= 0.0 && v <= 0.4) return "森林"; return "平原";
+        }
+        function getHeightNoise(x, z) {
+            let b = getClimate(x, z); let base = Math.sin(x * 0.03) * Math.cos(z * 0.03) * 3; 
+            if (b === "砂漠") return 13 + base * 0.5; if (b === "海") return 6 + base * 0.4; if (b === "森林") return 14 + base * 1.2; return 12 + base; 
+        }
+
+        function isSolid(x, y, z) { let b = worldBlocks.get(blockKey(x,y,z)); return b && b.active && b.type !== 13; }
+        function isFluid(x, y, z) { let b = worldBlocks.get(blockKey(x,y,z)); return b && b.active && b.type === 13; }
+
+        function checkBlockCollision(px, py, pz) {
+            let r = playerPhysics.radius; let h = playerPhysics.height;
+            let minX = Math.floor(px - r), maxX = Math.floor(px + r), minY = Math.floor(py), maxY = Math.floor(py + h), minZ = Math.floor(pz - r), maxZ = Math.floor(pz + r);
+            for (let x = minX; x <= maxX; x++) {
+                for (let y = minY; y <= maxY; y++) {
+                    for (let z = minZ; z <= maxZ; z++) {
+                        if (isSolid(x, y, z)) {
+                            let cx = Math.max(x, Math.min(px, x + 1)), cy = Math.max(y, Math.min(py, y + 1)), cz = Math.max(z, Math.min(pz, z + 1));
+                            if (((px - cx)**2 + (pz - cz)**2) < (r * r) && py < (y + 1) && (py + h) > y) return true;
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+
+        // 🧟 ゾンビと通常動物のメッシュ生成
+        function createMobMesh(type) {
+            const group = new THREE.Group(); let bMat, fMat;
+            if (type === "zombie") {
+                // ゾンビ（緑色の体と青い服）
+                bMat = new THREE.MeshLambertMaterial({ color: 0x00aa55 }); 
+                let clothMat = new THREE.MeshLambertMaterial({ color: 0x0055aa });
+                const body = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.75, 0.25), clothMat); body.position.set(0, 0.6, 0); group.add(body);
+                const head = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.32, 0.32), bMat); head.position.set(0, 1.08, 0); group.add(head);
+                // 腕（前に突き出しているポーズ）
+                const armGeo = new THREE.BoxGeometry(0.12, 0.12, 0.4);
+                const lArm = new THREE.Mesh(armGeo, bMat); lArm.position.set(-0.24, 0.75, 0.15); group.add(lArm);
+                const rArm = new THREE.Mesh(armGeo, bMat); rArm.position.set(0.24, 0.75, 0.15); group.add(rArm);
+                // 足
+                const legGeo = new THREE.BoxGeometry(0.14, 0.45, 0.14);
+                let pantsMat = new THREE.MeshLambertMaterial({ color: 0x333333 });
+                const lLeg = new THREE.Mesh(legGeo, pantsMat); lLeg.position.set(-0.1, 0.22, 0); group.add(lLeg);
+                const rLeg = new THREE.Mesh(legGeo, pantsMat); rLeg.position.set(0.1, 0.22, 0); group.add(rLeg);
+            } else {
+                // 通常動物
+                if(type==="sheep"){ bMat=new THREE.MeshLambertMaterial({color:0xe6e6e6}); }
+                else if(type==="pig"){ bMat=new THREE.MeshLambertMaterial({color:0xfba3b7}); }
+                else { bMat=new THREE.MeshLambertMaterial({color:0x5c3e21}); } 
+                const body = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.5, 0.85), bMat); body.position.set(0, 0.45, 0); group.add(body);
+                const head = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.3), bMat); head.position.set(0, 0.68, 0.42); group.add(head);
+                const lGeo = new THREE.BoxGeometry(0.14, 0.4, 0.14); 
+                [[-0.18,0.2,0.26],[0.18,0.2,0.26],[-0.18,0.2,-0.26],[0.18,0.2,-0.26]].forEach(p => { const leg = new THREE.Mesh(lGeo, bMat); leg.position.set(p[0],p[1],p[2]); group.add(leg); });
+            }
+            group.traverse(child => { if(child.isMesh) child.userData.origColor = child.material.color.getHex(); });
+            return group;
+        }
+
+        // 🧟 モブ生成とAI処理（夜のゾンビスポン対応）
+        function processDynamicMobSpawning() {
+            mobs = mobs.filter(m => { let d = Math.sqrt((m.x-playerPhysics.x)**2 + (m.z-playerPhysics.z)**2); if (d > 32 || m.hp <= 0) { if(m.mesh) scene.remove(m.mesh); return false; } return true; });
+            
+            let isNight = gameTime >= 13000 && gameTime < 23000;
+            if (mobs.length < MAX_MOBS && Math.random() < 0.08) {
+                let rx = playerPhysics.x + (Math.random()-0.5)*40; let rz = playerPhysics.z + (Math.random()-0.5)*40;
+                if(Math.sqrt((rx-playerPhysics.x)**2+(rz-playerPhysics.z)**2) > 8) {
+                    let ry = Math.floor(getHeightNoise(rx, rz)) + 1; let bme = getClimate(rx, rz);
+                    if(ry >= 10) {
+                        let t;
+                        if(isNight && Math.random() < 0.65) {
+                            t = "zombie"; // 夜間は高い確率でゾンビをスポン
+                        } else {
+                            if(bme==="砂漠" || bme==="海") return;
+                            t = ["sheep","pig","cow"][Math.floor(Math.random()*3)];
+                        }
+                        let m = createMobMesh(t); scene.add(m);
+                        mobs.push({ type:t, x:rx, y:ry, z:rz, vx:0, vy:0, vz:0, rot:Math.random()*6, timer:2, mesh:m, hp:(t==="zombie"?15:10), invincibleTimer: 0, isHostile: (t==="zombie") });
+                    }
+                }
+            }
+        }
+
+        function getMobUnderCrosshair() {
+            let targetMob = null; let minDistance = 3.5; let viewDirection = new THREE.Vector3(); camera.getWorldDirection(viewDirection);
+            mobs.forEach(m => {
+                if (m.hp <= 0) return;
+                let mobCenter = new THREE.Vector3(m.x, m.y + 0.45, m.z); let playerEye = new THREE.Vector3(playerPhysics.x, playerPhysics.y + playerPhysics.eyeHeight, playerPhysics.z);
+                let toMob = new THREE.Vector3().subVectors(mobCenter, playerEye); let distance = toMob.length();
+                if (distance < minDistance) { toMob.normalize(); let dot = viewDirection.dot(toMob); if (dot > 0.90) { minDistance = distance; targetMob = m; } }
+            });
+            return targetMob;
+        }
+
+        function checkAttackMob(specificMob) {
+            let hit = specificMob || getMobUnderCrosshair();
+            if(hit) {
+                if (hit.invincibleTimer > 0) return true; hit.isHostile = true; let held = hotbar[activeSlot];
+                let dmg = (held && ITEMS[held.id].attackPower) ? ITEMS[held.id].attackPower : 1; 
+                hit.hp -= dmg; hit.vy = 3.5; let dx = hit.x - playerPhysics.x; let dz = hit.z - playerPhysics.z;
+                let len = Math.sqrt(dx*dx + dz*dz) || 1; hit.vx = (dx / len) * 4.5; hit.vz = (dz / len) * 4.5;
+                hit.invincibleTimer = 0.4; hit.mesh.traverse(child => { if(child.isMesh && child.material) child.material.color.setHex(0xff2222); });
+                if(hit.hp <= 0) {
+                    setTimeout(() => {
+                        if(hit.mesh) scene.remove(hit.mesh);
+                        if(hit.type==="sheep"){ gainItem(21); mergeToHotbar(22, 1); } 
+                        else if(hit.type==="pig") { mergeToHotbar(26, 2); } 
+                        else if(hit.type==="cow") { mergeToHotbar(28, 2); mergeToHotbar(25, 1); }
+                        else if(hit.type==="zombie") { 
+                            // ゾンビ撃破報酬（稀に鉄インゴット）
+                            if(Math.random() < 0.2) mergeToHotbar(36, 1); else mergeToHotbar(20, 1); 
+                        }
+                        renderHotbar();
+                    }, 120);
+                }
+                return true; 
+            }
+            return false;
+        }
+
+        function initGame() {
+            scene = new THREE.Scene(); scene.background = new THREE.Color(0xbfd1e5);
+            let initialDist = renderDistance * chunkSize * 1.3; scene.fog = new THREE.FogExp2(0xbfd1e5, 1.0 / initialDist);
+            
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.05, 40); 
+            renderer = new THREE.WebGLRenderer({ antialias: false }); renderer.setSize(window.innerWidth, window.innerHeight); document.body.appendChild(renderer.domElement);
+            
+            ambientLight = new THREE.AmbientLight(0xffffff, 0.8); scene.add(ambientLight);
+            sunLight = new THREE.DirectionalLight(0xffffff, 0.4); sunLight.position.set(10, 25, 10); scene.add(sunLight);
+
+            const geometry = new THREE.BoxGeometry(1, 1, 1); meshes = {}; const loader = new THREE.TextureLoader();
+            const tex = (m) => { let t = loader.load(createPixelTexture(m)); t.magFilter = THREE.NearestFilter; t.minFilter = THREE.NearestFilter; return t; };
+            const cache = { g_top:tex("grass_top"), g_side:tex("grass_side"), dirt:tex("dirt"), stone:tex("stone"), log_side:tex("log_side"), log_top:tex("log_top"), leaves:tex("leaves"), coal:tex("coal"), planks:tex("planks"), sand:tex("sand"), water:tex("water"), bedrock:tex("bedrock"), c_top:tex("crafting_top"), c_side:tex("crafting_side"), f_side:tex("furnace-side"), f_front:tex("furnace-front"), bed:tex("bed_block"), wool:tex("wool"), iron:tex("iron") };
+
+            const mats = (id) => {
+                if (id === 0) { let s=new THREE.MeshLambertMaterial({map:cache.g_side}), t=new THREE.MeshLambertMaterial({map:cache.g_top}), b=new THREE.MeshLambertMaterial({map:cache.dirt}); return [s,s,t,b,s,s]; }
+                if (id === 3) { let s=new THREE.MeshLambertMaterial({map:cache.log_side}), t=new THREE.MeshLambertMaterial({map:cache.log_top}); return [s,s,t,t,s,s]; }
+                if (id === 11) { let s=new THREE.MeshLambertMaterial({map:cache.c_side}), t=new THREE.MeshLambertMaterial({map:cache.c_top}), b=new THREE.MeshLambertMaterial({map:cache.planks}); return [s,s,t,b,s,s]; }
+                if (id === 24) { let s=new THREE.MeshLambertMaterial({map:cache.f_side}), f=new THREE.MeshLambertMaterial({map:cache.f_front}); return [s,s,s,s,f,s]; }
+                if (id === 34) { let m=new THREE.MeshLambertMaterial({map:cache.bed}); return [m,m,m,m,m,m]; }
+                let m = cache.dirt; if(id===2) m=cache.stone; if(id===7) m=cache.leaves; if(id===8) m=cache.coal; if(id===9) m=cache.planks; if(id===12) m=cache.sand; if(id===14) m=cache.bedrock; if(id===21) m=cache.wool; if(id===35) m=cache.iron;
+                if (id === 13) return new THREE.MeshLambertMaterial({ map: cache.water, transparent: true, opacity: 0.65 });
+                return new THREE.MeshLambertMaterial({ map: m });
+            };
+
+            [0,1,2,3,7,8,9,11,12,13,14,21,24,34,35].forEach(id => {
+                const im = new THREE.InstancedMesh(geometry, mats(id), maxInstancesPerMesh); im.count = 0; scene.add(im); meshes[id] = im;
+            });
+
+            function generateChunk(cx, cz) {
+                const sX = cx * chunkSize, sZ = cz * chunkSize;
+                for (let x = 0; x < chunkSize; x++) {
+                    for (let z = 0; z < chunkSize; z++) {
+                        const wx = sX + x, wz = sZ + z; const bme = getClimate(wx, wz); const sY = Math.floor(getHeightNoise(wx, wz));
+                        for (let wy = Math.max(sY, 10); wy >= -10; wy--) {
+                            let k = blockKey(wx, wy, wz); if (worldBlocks.has(k)) continue;
+                            if (wy === -10) { worldBlocks.set(k, { type: 14, active: true }); continue; }
+                            if (wy > sY && wy <= 10) { worldBlocks.set(k, { type: 13, active: true, level: 7 }); continue; }
+                            
+                            if (wy === sY) {
+                                let finalType = (bme === "砂漠" || wy <= 10) ? 12 : 0; worldBlocks.set(k, { type: finalType, active: true });
+                                
+                                // 🍃 森林バイオームに加え、平原バイオームにも低確率で樹木を生成
+                                let treeChance = (bme === "森林") ? 0.88 : 0.975;
+                                if (wy >= 11 && pseudoRandom2D(wx, wz, currentSeed) > treeChance) {
+                                    for(let h=1; h<=4; h++) worldBlocks.set(blockKey(wx, wy+h, wz), { type: 3, active: true });
+                                    for(let lx=-2; lx<=2; lx++) { for(let lz=-2; lz<=2; lz++) { for(let ly=3; ly<=4; ly++) { if(Math.abs(lx)+Math.abs(lz)>3) continue; worldBlocks.set(blockKey(wx+lx, wy+ly, wz+lz), { type: 7, active: true }); } } }
+                                    worldBlocks.set(blockKey(wx, wy+5, wz), { type: 7, active: true });
+                                }
+                            } else if (wy < sY && wy > sY - 3) {
+                                worldBlocks.set(k, { type: (bme === "砂漠" || wy <= 10) ? 12 : 1, active: true });
+                            } else {
+                                worldBlocks.set(k, { type: 2, active: true });
+                            }
+                        }
+                    }
+                }
+                
+                // 鉄鉱石の塊（鉱脈）生成ロジック
+                for (let x = 0; x < chunkSize; x++) {
+                    for (let z = 0; z < chunkSize; z++) {
+                        const wx = sX + x, wz = sZ + z;
+                        if (pseudoRandom2D(wx, 55, wz + currentSeed) > 0.985) {
+                            let startY = -8 + Math.floor(pseudoRandom2D(wx, wz, 999) * 17); let veinSize = 4 + Math.floor(pseudoRandom2D(wx, startY, wz) * 5);
+                            let curX = wx, curY = startY, curZ = wz;
+                            for(let v=0; v<veinSize; v++) {
+                                let tk = blockKey(curX, curY, curZ); let baseB = worldBlocks.get(tk);
+                                if(baseB && baseB.active && baseB.type === 2) { worldBlocks.set(tk, { type: 35, active: true }); }
+                                let dir = Math.floor(pseudoRandom2D(curX, curY + v, curZ) * 6);
+                                if(dir === 0) curX++; else if(dir === 1) curX--; else if(dir === 2) curY++; else if(dir === 3) curY--; else if(dir === 4) curZ++; else if(dir === 5) curZ--;
+                            }
+                        }
+                        for(let wy = 9; wy >= -9; wy--) {
+                            let tk = blockKey(wx, wy, wz); let baseB = worldBlocks.get(tk);
+                            if(baseB && baseB.active && baseB.type === 2 && pseudoRandom2D(wx, wy, wz) > 0.97) { worldBlocks.set(tk, { type: 8, active: true }); }
+                        }
+                    }
+                }
+            }
+
+            window.updateLoadedChunks = function() {
+                const pcx = Math.floor(playerPhysics.x / chunkSize), pcz = Math.floor(playerPhysics.z / chunkSize);
+                for (let x = -renderDistance; x <= renderDistance; x++) { for (let z = -renderDistance; z <= renderDistance; z++) { let id = `${pcx+x},${pcz+z}`; if (!loadedChunks.has(id)) { loadedChunks.add(id); generateChunk(pcx+x, pcz+z); } } }
+                Object.keys(meshes).forEach(id => meshes[id].count = 0); const dummy = new THREE.Object3D();
+                worldBlocks.forEach((b, k) => {
+                    if (!b.active) return; const [bx, by, bz] = k.split(',').map(Number);
+                    if (Math.abs(bx-playerPhysics.x) > renderDistance*chunkSize*1.5 || Math.abs(bz-playerPhysics.z) > renderDistance*chunkSize*1.5) return;
+                    const m = meshes[b.type];
+                    if (m && m.count < maxInstancesPerMesh) { dummy.position.set(bx, by, bz); dummy.scale.set(1, 1, 1); if (b.type === 13) { let th = ((b.level||7)+1)/8; dummy.scale.set(1, th, 1); dummy.position.y = by - (1-th)*0.5; } dummy.updateMatrix(); m.setMatrixAt(m.count, dummy.matrix); m.count++; }
+                });
+                Object.keys(meshes).forEach(id => meshes[id].instanceMatrix.needsUpdate = true);
+            };
+
+            const ray = new THREE.Raycaster(); const mouse = new THREE.Vector2(0, 0);
+
+            function handleRightClickInteract() {
+                if(gamePaused || document.getElementById('inventory-screen').style.display==='flex') return;
+                const item = hotbar[activeSlot]; 
+                if(item && (ITEMS[item.id].type==='food'||ITEMS[item.id].type==='armor'||ITEMS[item.id].type==='shield')){ useOrEquipItem(); return; }
+                
+                ray.setFromCamera(mouse, camera); const hits = ray.intersectObjects(Object.values(meshes));
+                if(hits.length>0 && hits[0].distance < 4.5) {
+                    let hit = hits[0]; let mat = new THREE.Matrix4(); hit.object.getMatrixAt(hit.instanceId, mat);
+                    let bp = new THREE.Vector3().setFromMatrixPosition(mat); const bx=Math.floor(bp.x+0.5), by=Math.floor(bp.y+0.5), bz=Math.floor(bp.z+0.5);
+                    let k = blockKey(bx,by,bz); let type = worldBlocks.get(k)?.type;
+                    
+                    if (item && item.id === 45 && type === 13) { 
+                        worldBlocks.set(k, { type: 1, active: false }); item.count--; if(item.count <= 0) hotbar[activeSlot] = null;
+                        mergeToHotbar(46, 1); renderHotbar(); updateButtonUI(); window.updateLoadedChunks(); return;
+                    }
+                    if (item && item.id === 46) { 
+                        const n = hit.face.normal; worldBlocks.set(blockKey(bx+n.x, by+n.y, bz+n.z), { type: 13, active: true, level: 7 });
+                        item.count--; if(item.count <= 0) hotbar[activeSlot] = null; mergeToHotbar(45, 1); renderHotbar(); updateButtonUI(); window.updateLoadedChunks(); return;
+                    }
+
+                    if(type===11){ isUsingCraftingTable=true; isUsingFurnace=false; setupUILayoutMode(); document.getElementById('inventory-screen').style.display='flex'; refreshInventoryUI(); return; }
+                    if(type===24){ isUsingFurnace=true; isUsingCraftingTable=false; setupUILayoutMode(); document.getElementById('inventory-screen').style.display='flex'; refreshInventoryUI(); return; }
+                    
+                    if(type===34 || (item && item.id===34)) {
+                        if(gameTime >= 12500 && gameTime <= 23000) {
+                            gameTime = 0; spawnPoint = { x: playerPhysics.x, y: playerPhysics.y, z: playerPhysics.z }; 
+                            const flash = document.getElementById('damage-flash'); flash.style.background = "rgba(0,0,0,0.95)";
+                            setTimeout(() => flash.style.background="transparent", 600); return;
+                        }
+                    }
+
+                    if(!item || ITEMS[item.id].type!=='block') return; const n = hit.face.normal;
+                    worldBlocks.set(blockKey(bx+n.x, by+n.y, bz+n.z), { type: ITEMS[item.id].blockId, active: true });
+                    item.count--; if(item.count<=0) hotbar[activeSlot]=null; renderHotbar(); updateButtonUI(); window.updateLoadedChunks();
+                }
+            }
+
+            function updateMiningLogic(dt) {
+                if(!isMiningPressed || gamePaused) { document.getElementById('break-progress-container').style.display='none'; miningTarget=null; miningProgress=0; return; }
+                if(canAttack) { 
+                    let targetMob = getMobUnderCrosshair();
+                    if(targetMob) {
+                        miningTarget = null; miningProgress = 0; document.getElementById('break-progress-container').style.display='none';
+                        let executed = checkAttackMob(targetMob); 
+                        if(executed) { canAttack = false; setTimeout(() => { canAttack = true; }, 220); isMiningPressed = false; return; } 
+                    }
+                }
+                ray.setFromCamera(mouse, camera); const hits = ray.intersectObjects(Object.values(meshes));
+                if(hits.length > 0 && hits[0].distance < 4.5) {
+                    let hit = hits[0]; let mat = new THREE.Matrix4(); hit.object.getMatrixAt(hit.instanceId, mat);
+                    let bp = new THREE.Vector3().setFromMatrixPosition(mat); const bx=Math.floor(bp.x+0.5), by=Math.floor(bp.y+0.5), bz=Math.floor(bp.z+0.5);
+                    let k = blockKey(bx,by,bz); let b = worldBlocks.get(k);
+                    if(!b || !b.active || b.type===14 || b.type===13) { document.getElementById('break-progress-container').style.display='none'; miningTarget=null; miningProgress=0; return; }
+                    if(miningTarget !== k) { miningTarget = k; miningProgress = 0; }
+                    let prop = BLOCK_PROPERTIES[b.type]; let speedFactor = 0.25; let held = hotbar[activeSlot];
+                    if(prop && held) { let toolData = ITEMS[held.id]; if(toolData.toolType === prop.tool) { speedFactor = toolData.tier || 1.0; } } else if(prop && prop.tool === 'any') { speedFactor = 1.0; }
+                    miningProgress += (speedFactor / (prop ? prop.hardness : 1.0)) * dt;
+                    document.getElementById('break-progress-container').style.display='block';
+                    document.getElementById('break-progress-bar').style.width = `${Math.min(miningProgress*100, 100)}%`;
+                    if(miningProgress >= 1.0) { 
+                        gainItem(b.type); b.active = false; document.getElementById('break-progress-container').style.display='none'; 
+                        miningTarget = null; miningProgress = 0; isMiningPressed = false; window.updateLoadedChunks(); 
+                    }
+                } else { document.getElementById('break-progress-container').style.display='none'; miningTarget = null; miningProgress = 0; }
+            }
+
+            function processFluidsAndPhysics() {
+                let keys = Array.from(worldBlocks.keys());
+                keys.forEach(k => {
+                    let b = worldBlocks.get(k); if(!b || !b.active) return;
+                    let [x,y,z] = k.split(',').map(Number);
+                    if(b.type === 12) {
+                        let downKey = blockKey(x, y-1, z); let downB = worldBlocks.get(downKey);
+                        if(!downB || !downB.active || downB.type === 13) { b.active = false; worldBlocks.set(downKey, { type: 12, active: true }); window.updateLoadedChunks(); }
+                    }
+                });
+            }
+
+            let move = { f: false, b: false, l: false, r: false }; let jumpPressed = false;
+            const setupTouch = (id, prop) => {
+                const el = document.getElementById(id);
+                el.addEventListener('touchstart', e => { e.preventDefault(); move[prop]=true; }, {passive:false});
+                el.addEventListener('touchend', e => { e.preventDefault(); move[prop]=false; }, {passive:false});
+            };
+            setupTouch('btn-up','f'); setupTouch('btn-down','b'); setupTouch('btn-left','l'); setupTouch('btn-right','r');
+            
+            document.getElementById('btn-attack').addEventListener('touchstart', e => { e.preventDefault(); isMiningPressed=true; }, {passive:false});
+            document.getElementById('btn-attack').addEventListener('touchend', e => { e.preventDefault(); isMiningPressed=false; }, {passive:false});
+            document.getElementById('btn-use').addEventListener('touchstart', e => { e.preventDefault(); handleRightClickInteract(); }, {passive:false});
+            
+            document.getElementById('btn-jump').addEventListener('touchstart', e => { 
+                e.preventDefault(); jumpPressed = true; let inWater = isFluid(playerPhysics.x, playerPhysics.y + 0.1, playerPhysics.z);
+                if(playerPhysics.isGrounded || inWater) { playerPhysics.vy = inWater ? 3.8 : 5.6; playerPhysics.isGrounded = false; playerPhysics.hungerExhaustion += 0.2; }
+            }, {passive:false});
+            document.getElementById('btn-jump').addEventListener('touchend', e => { e.preventDefault(); jumpPressed = false; }, {passive:false});
+
+            let lookId = null; let lx=0, ly=0;
+            window.addEventListener('touchstart', e => {
+                if(gamePaused || document.getElementById('inventory-screen').style.display==='flex') return;
+                for(let i=0; i<e.changedTouches.length; i++) {
+                    let t = e.changedTouches[i]; if(!t.target.closest('#touch-controls-left, #touch-controls-right, #bottom-ui-wrapper, #pause-trigger')) { if(lookId===null){ lookId=t.identifier; lx=t.clientX; ly=t.clientY; break; } }
+                }
+            }, {passive:true});
+            window.addEventListener('touchmove', e => {
+                if(gamePaused || lookId===null) return;
+                for(let i=0; i<e.touches.length; i++) {
+                    let t=e.touches[i]; if(t.identifier===lookId){ lon += (t.clientX - lx) * 0.22; lat -= (t.clientY - ly) * 0.22; lat=Math.max(-85,Math.min(85,lat)); lx=t.clientX; ly=t.clientY; break; }
+                }
+            }, {passive:true});
+            window.addEventListener('touchend', e => { for(let i=0; i<e.changedTouches.length; i++) { if(e.changedTouches[i].identifier===lookId) { lookId=null; break; } } }, {passive:true});
+
+            function checkCollisionAndMove(dx, dy, dz) {
+                let p = playerPhysics; p.y += dy;
+                if (checkBlockCollision(p.x, p.y, p.z)) { 
+                    if (dy < 0) { p.y = Math.floor(p.y) + 1.001; p.isGrounded = true; } else { p.y = Math.floor(p.y) - 0.001; } p.vy = 0; 
+                } else { p.isGrounded = checkBlockCollision(p.x, p.y - 0.04, p.z); }
+                p.x += dx; if(checkBlockCollision(p.x, p.y, p.z)) { p.y += 0.5; if(checkBlockCollision(p.x, p.y, p.z)) { p.x -= dx*1.02; p.y -= 0.5; } }
+                p.z += dz; if(checkBlockCollision(p.x, p.y, p.z)) { p.y += 0.5; if(checkBlockCollision(p.x, p.y, p.z)) { p.z -= dz*1.02; p.y -= 0.5; } }
+            }
+
+            function processFurnace(dt) {
+                if(furnaceData.burnTimeLeft>0) furnaceData.burnTimeLeft -= dt;
+                if(furnaceData.burnTimeLeft<=0 && furnaceData.input && furnaceData.fuel && SMELTING_RECIPES[furnaceData.input.id]) {
+                    let f = ITEMS[furnaceData.fuel.id]; if(f&&f.fuelTime){ furnaceData.burnTimeLeft=f.fuelTime; furnaceData.maxBurnTime=f.fuelTime; furnaceData.fuel.count--; if(furnaceData.fuel.count<=0) furnaceData.fuel=null; }
+                }
+                if(furnaceData.burnTimeLeft>0 && furnaceData.input) {
+                    let r = SMELTING_RECIPES[furnaceData.input.id];
+                    if(r && (!furnaceData.output || (furnaceData.output.id===r.resultId && furnaceData.output.count<64))) {
+                        furnaceData.cookProgress += dt;
+                        if(furnaceData.cookProgress >= furnaceData.maxCookProgress) { furnaceData.input.count--; if(furnaceData.input.count<=0) furnaceData.input=null; if(!furnaceData.output) furnaceData.output={id:r.resultId, count:1}; else furnaceData.output.count++; furnaceData.cookProgress=0; }
+                    }
+                } else furnaceData.cookProgress=0;
+            }
+
+            const clock = new THREE.Clock(); let lastBX=99, lastBZ=99;
+
+            function animate() {
+                requestAnimationFrame(animate); const dt = Math.min(clock.getDelta(), 0.04); if (gamePaused) return;
+                fpsCount++; fpsTimer += dt; if(fpsTimer>=1.0){ document.getElementById('hud-fps').innerText=`FPS: ${fpsCount}`; fpsCount=0; fpsTimer=0; }
+
+                gameTime = (gameTime + dt * 25) % 24000; let skyColor, lightLevel, timeStr;
+                if (gameTime >= 0 && gameTime < 12000) { skyColor = new THREE.Color(0x78a7ff); lightLevel = 15; timeStr = "昼"; ambientLight.color.setHex(0xffffff); ambientLight.intensity = 0.8; sunLight.intensity = 0.4; } 
+                else if (gameTime >= 12000 && gameTime < 13000) { let ratio = (gameTime - 12000) / 1000; skyColor = new THREE.Color().lerpColors(new THREE.Color(0x78a7ff), new THREE.Color(0xcc5522), ratio); lightLevel = Math.round(15 - ratio * 11); timeStr = "夕方"; ambientLight.intensity = 0.8 - ratio * 0.45; sunLight.intensity = 0.4 - ratio * 0.35; } 
+                else if (gameTime >= 13000 && gameTime < 23000) { skyColor = new THREE.Color(0x0a0a14); lightLevel = 4; timeStr = "夜"; ambientLight.color.setHex(0x77778c); ambientLight.intensity = 0.38; sunLight.intensity = 0.03; } 
+                else { let ratio = (gameTime - 23000) / 1000; skyColor = new THREE.Color().lerpColors(new THREE.Color(0x0a0a14), new THREE.Color(0x78a7ff), ratio); lightLevel = Math.round(4 + ratio * 11); timeStr = "夜明け"; ambientLight.color.setHex(0xffffff); ambientLight.intensity = 0.38 + ratio * 0.42; sunLight.intensity = 0.03 + ratio * 0.37; }
+                scene.background = skyColor; if(scene.fog) scene.fog.color = skyColor;
+                document.getElementById('hud-time').innerText = `時間: ${Math.floor(gameTime)} (${timeStr}) 明るさ: ${lightLevel}`;
+
+                updateMiningLogic(dt); processDynamicMobSpawning(); processFurnace(dt);
+                if(clock.getElapsedTime() % 0.25 < dt) processFluidsAndPhysics();
+                if(playerPhysics.invincibleTimer > 0) playerPhysics.invincibleTimer = Math.max(0, playerPhysics.invincibleTimer - dt);
+
+                playerPhysics.hungerExhaustion += dt * 0.08;
+                if(playerPhysics.hungerExhaustion >= 4.0) { playerPhysics.hungerExhaustion = 0; playerPhysics.hunger = Math.max(0, playerPhysics.hunger - 1); updateGraphicalHUD(); }
+
+                mobs.forEach(m => {
+                    if (m.invincibleTimer > 0) { m.invincibleTimer -= dt; if (m.invincibleTimer <= 0) { m.mesh.traverse(child => { if(child.isMesh && child.userData.origColor !== undefined) child.material.color.setHex(child.userData.origColor); }); } }
+                    
+                    // 🧟 ゾンビまたは敵対化した通常モブのAI追跡
+                    if (m.isHostile && m.hp > 0) { 
+                        let pdx = playerPhysics.x - m.x; let pdz = playerPhysics.z - m.z; m.rot = Math.atan2(pdx, pdz); 
+                        let spd = (m.type === "zombie") ? 1.6 : 2.2; // ゾンビは少し鈍重
+                        m.vx = Math.sin(m.rot) * spd; m.vz = Math.cos(m.rot) * spd; 
+                    } 
+                    else { m.timer -= dt; if(m.timer<=0){ m.rot=Math.random()*6; m.timer=2+Math.random()*2; } m.vx *= Math.exp(-5.0*dt); m.vz *= Math.exp(-5.0*dt); if(Math.abs(m.vx)<0.02){ m.vx=Math.sin(m.rot)*0.5; m.vz=Math.cos(m.rot)*0.5; } }
+                    
+                    m.vy -= 12.0*dt; m.y += m.vy*dt;
+                    let f = worldBlocks.get(blockKey(m.x, m.y, m.z)); if(f&&f.active&&f.type!==13&&m.vy<0){ m.y=Math.floor(m.y)+1; m.vy=0; if(Math.random()<0.02 || m.isHostile) m.vy=3.5; }
+                    m.x += m.vx*dt; m.z += m.vz*dt; if(m.mesh){ m.mesh.position.set(m.x,m.y,m.z); m.mesh.rotation.y=m.rot; }
+                    
+                    if(m.isHostile && m.hp > 0) {
+                        let distToPlayer = Math.sqrt((m.x-playerPhysics.x)**2 + (m.y-playerPhysics.y)**2 + (m.z-playerPhysics.z)**2);
+                        if(distToPlayer < 1.1 && playerPhysics.invincibleTimer === 0) {
+                            
+                            // 🛡️ 盾による完全防御チェック
+                            let isShieldActive = (armorSlots[4] && armorSlots[4].id === 47) || (hotbar[activeSlot] && hotbar[activeSlot].id === 47);
+                            if (isShieldActive) {
+                                playerPhysics.invincibleTimer = 0.4; 
+                            } else {
+                                // 防御力の計算
+                                let totalArmor = 0; armorSlots.forEach(s => { if(s) totalArmor += ITEMS[s.id].armorValue || 0; });
+                                let baseDmg = (m.type === "zombie") ? 3 : 1;
+                                let reduction = Math.min(20, totalArmor) * 0.04;
+                                let finalDmg = Math.max(1, Math.round(baseDmg * (1 - reduction)));
+                                
+                                playerPhysics.hp = Math.max(0, playerPhysics.hp - finalDmg); playerPhysics.invincibleTimer = 0.5;
+                            }
+                            
+                            let nkx = playerPhysics.x - m.x; let nkz = playerPhysics.z - m.z;
+                            let nkl = Math.sqrt(nkx*nkx + nkz*nkz) || 1;
+                            playerPhysics.vy = 4.2; playerPhysics.knockbackX = (nkx / nkl) * 6.5; playerPhysics.knockbackZ = (nkz / nkl) * 6.5;
+                            const flash = document.getElementById('damage-flash'); flash.style.background = "rgba(255, 0, 0, 0.4)";
+                            setTimeout(() => flash.style.background="transparent", 150); updateGraphicalHUD();
+                            if (playerPhysics.hp <= 0) { executePlayerDeathRespawn(); }
+                        }
+                    }
+                });
+
+                let p = playerPhysics; let inWater = isFluid(p.x, p.y+0.2, p.z);
+                if (inWater) { p.vy -= 3.0 * dt; if (p.vy < -1.2) p.vy = -1.2; if (jumpPressed) { p.vy += (1.5 - p.vy) * 7 * dt; } else { p.vy *= Math.exp(-3.0 * dt); } } else { p.vy -= 14.0 * dt; }
+                let headInWater = isFluid(p.x, p.y + p.eyeHeight, p.z); const oxUI = document.getElementById('oxygen-ui');
+                if (headInWater) {
+                    p.oxygen = Math.max(0, p.oxygen - dt * 25); oxUI.style.display = 'flex'; oxUI.innerHTML = '';
+                    let bubbles = Math.ceil(p.oxygen / 30); for(let i=0; i<bubbles; i++) oxUI.innerHTML += `<div class="bubble"></div>`;
+                    if(p.oxygen <= 0 && playerPhysics.invincibleTimer === 0) { p.hp = Math.max(0, p.hp - 2); p.invincibleTimer = 0.5; updateGraphicalHUD(); if (playerPhysics.hp <= 0) { executePlayerDeathRespawn(); } }
+                } else { p.oxygen = Math.min(p.maxOxygen, p.oxygen + dt * 80); oxUI.style.display = 'none'; }
+
+                phi = THREE.MathUtils.degToRad(90 - lat); theta = THREE.MathUtils.degToRad(lon);
+                camera.position.set(p.x, p.y + p.eyeHeight, p.z);
+                let target = new THREE.Vector3(p.x + Math.sin(phi)*Math.cos(theta), p.y + p.eyeHeight + Math.cos(phi), p.z + Math.sin(phi)*Math.sin(theta)); camera.lookAt(target);
+
+                let fwd = new THREE.Vector3(); camera.getWorldDirection(fwd); fwd.y = 0; fwd.normalize();
+                let rt = new THREE.Vector3().crossVectors(fwd, new THREE.Vector3(0, 1, 0)).normalize();
+                let mx = Number(move.r) - Number(move.l); let mz = Number(move.f) - Number(move.b);
+                let targetVx = 0, targetVz = 0; let maxSpeed = inWater ? 1.8 : 4.2;
+                if (mx !== 0 || mz !== 0) { targetVx = (fwd.x * mz + rt.x * mx) * maxSpeed; targetVz = (fwd.z * mz + rt.z * mx) * maxSpeed; p.vx += (targetVx - p.vx) * 12 * dt; p.vz += (targetVz - p.vz) * 12 * dt; } else { p.vx += (0 - p.vx) * 16 * dt; p.vz += (0 - p.vz) * 16 * dt; }
+                p.knockbackX += (0 - p.knockbackX) * 9.0 * dt; p.knockbackZ += (0 - p.knockbackZ) * 9.0 * dt;
+
+                checkCollisionAndMove((p.vx + p.knockbackX) * dt, p.vy * dt, (p.vz + p.knockbackZ) * dt);
+                if(p.y < -12) { executePlayerDeathRespawn(); } 
+                let cbx = Math.floor(p.x), cbz = Math.floor(p.z); if(cbx!==lastBX || cbz!==lastBZ){ window.updateLoadedChunks(); lastBX=cbx; lastBZ=cbz; }
+                document.getElementById('hud-biome').innerText = `バイオーム: ${getClimate(p.x, p.z)}`;
+                document.getElementById('hud-pos').innerText = `XYZ: ${p.x.toFixed(1)}, ${p.y.toFixed(1)}, ${p.z.toFixed(1)}`;
+                renderer.render(scene, camera);
+            }
+            window.updateLoadedChunks(); animate();
+        }
+    </script>
+</body>
+</html>
+<script>console.log("Hello JavaScript!");
+      </script>
+</body>
+</html>
