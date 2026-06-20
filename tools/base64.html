@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Tool Suite</title>
+    <link rel="stylesheet" href="static/css/style.css">
+    <style>
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+        .tab-btn { cursor: pointer; padding: 5px 10px; border: 1px solid var(--border-color); border-radius: 4px; background: none; }
+        .tab-btn.active { background: var(--accent-color); color: white; }
+        .tool-content { display: none; }
+        .tool-content.active { display: block; }
+        .header-container { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .back-btn { cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header-container">
+            <div class="tool-title">Utility Tools</div>
+            <button class="back-btn" onclick="history.back()">戻る</button>
+        </header>
+
+        <div class="tabs">
+            <button class="tab-btn active" onclick="showTab('ip-tool')">IP情報</button>
+            <button class="tab-btn" onclick="showTab('base64-tool')">Base64変換</button>
+        </div>
+
+        <div class="main-panel">
+            <div id="ip-tool" class="tool-content active">
+                <div class="form-group">
+                    <label>IPアドレスを入力 (空欄で自分のIP)</label>
+                    <input type="text" id="ip-input" placeholder="8.8.8.8">
+                </div>
+                <button class="btn" onclick="lookupIP()">検索・取得</button>
+                <div id="ip-result" class="result-area hidden"></div>
+            </div>
+
+            <div id="base64-tool" class="tool-content">
+                <div class="form-group">
+                    <label>画像ファイルをアップロード または テキスト</label>
+                    <input type="file" id="file-input" onchange="encodeFile()">
+                    <textarea id="text-input" rows="5" placeholder="Base64文字列を入力"></textarea>
+                </div>
+                <button class="btn" onclick="decodeBase64()">画像に変換</button>
+                <div id="base64-result" class="result-area hidden"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showTab(id) {
+            document.querySelectorAll('.tool-content').forEach(e => e.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(e => e.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            event.currentTarget.classList.add('active');
+        }
+
+        async function lookupIP() {
+            const ip = document.getElementById('ip-input').value;
+            const url = ip ? `https://ipapi.co/${ip}/json/` : 'https://ipapi.co/json/';
+            const res = await fetch(url).then(r => r.json());
+            const display = document.getElementById('ip-result');
+            
+            const mapUrl = `https://www.google.com/maps?q=${res.latitude},${res.longitude}`;
+            display.innerHTML = `
+                <ul>
+                    <li><strong>IP:</strong> ${res.ip}</li>
+                    <li><strong>都市:</strong> ${res.city}</li>
+                    <li><strong>国:</strong> ${res.country_name}</li>
+                    <li><strong>緯度・経度:</strong> ${res.latitude}, ${res.longitude}</li>
+                    <li><a href="${mapUrl}" target="_blank" style="color:blue; text-decoration:underline;">地図で表示する</a></li>
+                </ul>
+            `;
+            display.classList.remove('hidden');
+        }
+
+        function encodeFile() {
+            const file = document.getElementById('file-input').files[0];
+            const reader = new FileReader();
+            reader.onload = e => {
+                document.getElementById('text-input').value = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function decodeBase64() {
+            const val = document.getElementById('text-input').value;
+            const display = document.getElementById('base64-result');
+            display.innerHTML = `<img src="${val}" style="max-width:100%">`;
+            display.classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
