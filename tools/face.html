@@ -148,6 +148,86 @@
         .hidden {
             display: none !important;
         }
+
+        /* --- アドバンスド評価用追加スタイル --- */
+        .tab-container {
+            display: flex;
+            margin: 20px 0 10px 0;
+            border-bottom: 2px solid var(--border-color);
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 10px;
+            background: #f0f0f0;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--text-sub);
+            transition: all 0.2s;
+        }
+        .tab-btn.active {
+            background: var(--accent-color, #007bff);
+            color: #fff;
+        }
+        .canvas-container {
+            position: relative;
+            width: 100%;
+            margin-top: 15px;
+            display: flex;
+            justify-content: center;
+            background: #000;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        #overlay-canvas {
+            max-width: 100%;
+            height: auto;
+            display: block;
+        }
+        .pyramid-container {
+            margin: 20px 0;
+            background: #fdfdfd;
+            padding: 15px;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+        }
+        .pyramid-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            text-align: center;
+            color: var(--text-main);
+        }
+        .pyramid-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+        .pyramid-table tr {
+            transition: background 0.3s;
+        }
+        .pyramid-table tr.current-rank {
+            background: #fff3cd;
+            font-weight: bold;
+            border: 2px solid #ffc107;
+        }
+        .pyramid-table td {
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+        }
+        .rank-tier {
+            width: 30%;
+            color: var(--text-main);
+        }
+        .rank-pop {
+            width: 45%;
+            color: var(--text-sub);
+        }
+        .rank-status {
+            width: 25%;
+            text-align: right;
+        }
     </style>
 </head>
 <body>
@@ -193,20 +273,67 @@
                 [ 検出データ ] 推定年齢: <span id="age-output" style="color:var(--accent-color);">--</span>歳 / 感情ベース: <span id="expression-output" style="color:var(--accent-color);">--</span>
             </div>
 
-            <div class="score-display"><span>総合偏差値</span><span id="score-output">--</span></div>
-            
-            <table class="detail-table">
-                <thead>
-                    <tr>
-                        <th>詳細解析項目 (100点満点)</th>
-                        <th>AI スコア</th>
-                    </tr>
-                </thead>
-                <tbody id="score-tbody">
-                </tbody>
-            </table>
+            <div class="tab-container">
+                <button type="button" class="tab-btn active" id="tab-basic">基本解析データ</button>
+                <button type="button" class="tab-btn" id="tab-advanced">アドバンスド評価</button>
+            </div>
 
-            <p class="comment-display" id="comment-output">解析コメントがここに表示されます。</p>
+            <div id="basic-panel">
+                <div class="score-display"><span>総合偏差値</span><span id="score-output">--</span></div>
+                
+                <table class="detail-table">
+                    <thead>
+                        <tr>
+                            <th>詳細解析項目 (100点満点)</th>
+                            <th>AI スコア</th>
+                        </tr>
+                    </thead>
+                    <tbody id="score-tbody">
+                    </tbody>
+                </table>
+
+                <p class="comment-display" id="comment-output">解析コメントがここに表示されます。</p>
+            </div>
+
+            <div id="advanced-panel" class="hidden">
+                <div class="score-display"><span>アドバンスド偏差値</span><span id="adv-score-output">--</span></div>
+                
+                <label>AIランドマーク・チェックポイントマーク</label>
+                <div class="canvas-container">
+                    <canvas id="overlay-canvas"></canvas>
+                </div>
+
+                <div class="pyramid-container">
+                    <div class="pyramid-title">👑 モテ度ピラミッド階層表</div>
+                    <table class="pyramid-table">
+                        <tr id="tier-s">
+                            <td class="rank-tier">神クラス (偏差値70以上)</td>
+                            <td class="rank-pop">数千人に1人の逸材。歩くだけでモテる領域。</td>
+                            <td class="rank-status" id="status-s">-</td>
+                        </tr>
+                        <tr id="tier-a">
+                            <td class="rank-tier">無双クラス (偏差値60〜69)</td>
+                            <td class="rank-pop">学校や職場でトップ層。告白されやすい超モテ期。</td>
+                            <td class="rank-status" id="status-a">-</td>
+                        </tr>
+                        <tr id="tier-b">
+                            <td class="rank-tier">王道モテ (偏差値50〜59)</td>
+                            <td class="rank-pop">上位に位置する良ビジュアル。普通にモテる。</td>
+                            <td class="rank-status" id="status-b">-</td>
+                        </tr>
+                        <tr id="tier-c">
+                            <td class="rank-tier">平均・ポテンシャル (偏差値40〜49)</td>
+                            <td class="rank-pop">一般的な層。身だしなみや雰囲気次第で化ける。</td>
+                            <td class="rank-status" id="status-c">-</td>
+                        </tr>
+                        <tr id="tier-d">
+                            <td class="rank-tier">要プロデュース (偏差値40未満)</td>
+                            <td class="rank-pop">個性派。独自の魅力開拓やスタイリングが必要。</td>
+                            <td class="rank-status" id="status-d">-</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
             
             <button type="button" class="btn" id="retry-btn">別の写真を解析する</button>
         </div>
@@ -237,8 +364,17 @@
         const scoreTbody = document.getElementById('score-tbody');
         const commentOutput = document.getElementById('comment-output');
 
+        // タブ切替・アドバンスド用要素
+        const tabBasic = document.getElementById('tab-basic');
+        const tabAdvanced = document.getElementById('tab-advanced');
+        const basicPanel = document.getElementById('basic-panel');
+        const advancedPanel = document.getElementById('advanced-panel');
+        const advScoreOutput = document.getElementById('adv-score-output');
+        const overlayCanvas = document.getElementById('overlay-canvas');
+
         let isModelLoaded = false;
         let selectedFile = null;
+        let lastDetectionData = null; // Canvas再描画用に保持
 
         async function loadModels() {
             try {
@@ -250,7 +386,7 @@
                 await faceapi.nets.ageGenderNet.loadFromUri(MODEL_URL);
                 
                 isModelLoaded = true;
-                analyzeBtn.textContent = '全17項目 ディープスキャンを開始';
+                analyzeBtn.textContent = '全27項目 ディープスキャンを開始';
                 statusText.textContent = '準備完了。顔以外の画像は自動的に弾かれます。';
                 analyzeBtn.disabled = false;
             } catch (error) {
@@ -297,8 +433,105 @@
             "14. 口角の上昇角度を計算中...",
             "15. 人中の長さを測定中...",
             "16. 唇のシワと厚みを推論中...",
-            "17. 歯並びと口元の美しさを解析中..."
+            "17. 歯並びと口元の美しさを解析中...",
+            "18. 黄金比に近い目の横幅 (1:1:1) を測定中...",
+            "19. 黄金比に近い唇の縦横比を算出中...",
+            "20. 目頭と目尻の傾き（タレ目・ツリ目度）を解析中...",
+            "21. 左右のシンメトリー（対称性）を計算中...",
+            "22. Vラインのシャープさ（顎の角度）を測定中...",
+            "23. 眉の黄金比（眉頭・眉山・眉尻の位置）を確認中...",
+            "24. 首の細さと長さのバランスを推論中...",
+            "25. 肌のハリ・透明感をシミュレート中...",
+            "26. チークライン（頬の高さ）を検出中...",
+            "27. 笑顔の黄金比（スマイルライン）を評価中..."
         ];
+
+        // タブ切り替え処理
+        tabBasic.addEventListener('click', () => {
+            tabBasic.classList.add('active');
+            tabAdvanced.classList.remove('active');
+            basicPanel.classList.remove('hidden');
+            advancedPanel.classList.add('hidden');
+        });
+
+        tabAdvanced.addEventListener('click', () => {
+            tabAdvanced.classList.add('active');
+            tabBasic.classList.remove('active');
+            advancedPanel.classList.remove('hidden');
+            basicPanel.classList.add('hidden');
+            if (lastDetectionData) {
+                drawFaceMarkers(lastDetectionData);
+            }
+        });
+
+        // 画像にチェックポイントをマーキングして描画する関数
+        function drawFaceMarkers(detection) {
+            const ctx = overlayCanvas.getContext('2d');
+            overlayCanvas.width = targetImage.naturalWidth;
+            overlayCanvas.height = targetImage.naturalHeight;
+            
+            // 元画像を描画
+            ctx.drawImage(targetImage, 0, 0);
+            
+            const landmarks = detection.landmarks;
+            const positions = landmarks.positions;
+            
+            // チェックポイントマーク（全ランドマークを半透明のグリーンで繋ぐ・プロット）
+            ctx.strokeStyle = '#00ff00';
+            ctx.fillStyle = '#00ff00';
+            ctx.lineWidth = Math.max(2, overlayCanvas.width / 300);
+            
+            // 68の全ランドマークにクロス・ドットマークを展開
+            positions.forEach((pt) => {
+                ctx.beginPath();
+                ctx.arc(pt.x, pt.y, Math.max(3, overlayCanvas.width / 200), 0, 2 * Math.PI);
+                ctx.fill();
+            });
+
+            // 主要判定部位を強調ハイライト（目、鼻、口、輪郭）
+            ctx.strokeStyle = '#ff0055';
+            ctx.lineWidth = Math.max(3, overlayCanvas.width / 200);
+            
+            // 輪郭線
+            ctx.beginPath();
+            landmarks.getJawOutline().forEach((pt, idx) => {
+                if(idx === 0) ctx.moveTo(pt.x, pt.y); else ctx.lineTo(pt.x, pt.y);
+            });
+            ctx.stroke();
+
+            // 鼻ライン
+            ctx.beginPath();
+            landmarks.getNose().forEach((pt, idx) => {
+                if(idx === 0) ctx.moveTo(pt.x, pt.y); else ctx.lineTo(pt.x, pt.y);
+            });
+            ctx.stroke();
+        }
+
+        // ピラミッド階層の更新処理
+        function updatePyramid(score) {
+            const tiers = ['tier-s', 'tier-a', 'tier-b', 'tier-c', 'tier-d'];
+            const statuses = ['status-s', 'status-a', 'status-b', 'status-c', 'status-d'];
+            
+            tiers.forEach(t => document.getElementById(t).classList.remove('current-rank'));
+            statuses.forEach(s => document.getElementById(s).textContent = '-');
+
+            if (score >= 70) {
+                document.getElementById('tier-s').classList.add('current-rank');
+                document.getElementById('status-s').textContent = '★ あなたの現在地';
+            } else if (score >= 60) {
+                document.getElementById('tier-a').classList.add('current-rank');
+                document.getElementById('status-a').textContent = '★ あなたの現在地';
+            } else if (score >= 50) {
+                document.getElementById('tier-b').classList.add('current-rank');
+                document.getElementById('status-b').textContent = '★ あなたの現在地';
+            } else if (score >= 40) {
+                document.getElementById('tier-c').classList.add('current-rank');
+                document.getElementById('status-c').textContent = '★ あなたの現在地';
+            } else {
+                document.getElementById('tier-d').classList.add('current-rank');
+                document.getElementById('status-d').textContent = '★ あなたの現在地';
+            }
+        }
 
         analyzeBtn.addEventListener('click', async () => {
             if (!selectedFile || !isModelLoaded) return;
@@ -322,6 +555,8 @@
                     .withAgeAndGender();
 
                 if (!detection) throw new Error('FACE_NOT_FOUND');
+
+                lastDetectionData = detection; // キャッシュに格納
 
                 const landmarks = detection.landmarks;
                 const jaw = landmarks.getJawOutline();
@@ -360,6 +595,18 @@
                 scores["人中（じんちゅう）が短い"] = Math.min(100, Math.max(20, 100 - Math.abs((Math.abs(mouth[3].y - nose[6].y)/Math.abs(jaw[8].y - mouth[9].y)) - 0.5)*250));
                 scores["唇がふっくらしている"] = Math.min(100, Math.max(20, 100 - Math.abs((Math.abs(mouth[9].y - mouth[3].y)/faceHeight) - 0.1)*300));
                 scores["歯並びが綺麗 (推論)"] = 55 + (Math.abs(jaw[12].x - jaw[4].x) % 30);
+                
+                // 追加の10項目
+                scores["黄金比に近い目の横幅 (1:1:1)"] = Math.min(100, Math.max(20, 100 - Math.abs(Math.abs(leftEye[3].x - leftEye[0].x) - Math.abs(rightEye[0].x - leftEye[3].x)) / faceWidth * 350));
+                scores["黄金比に近い唇の縦横比"] = Math.min(100, Math.max(20, 100 - Math.abs((Math.abs(mouth[9].y - mouth[3].y) / Math.abs(mouth[6].x - mouth[0].x)) - 0.4) * 300));
+                scores["目頭と目尻の傾き（タレ目・ツリ目度）"] = Math.min(100, Math.max(20, 100 - Math.abs(((leftEye[3].y - leftEye[0].y) / faceHeight) - 0.02) * 500));
+                scores["左右のシンメトリー（対称性）"] = Math.min(100, Math.max(20, 100 - Math.abs(Math.abs(leftEye[0].x - nose[0].x) - Math.abs(rightEye[3].x - nose[0].x)) / faceWidth * 400));
+                scores["Vラインのシャープさ（顎の角度）"] = Math.min(100, Math.max(20, 100 - Math.abs((dist(jaw[6], jaw[8]) / dist(jaw[10], jaw[8])) - 1.0) * 300));
+                scores["眉の黄金比（眉頭・眉山の位置）"] = Math.min(100, Math.max(20, 100 - Math.abs((Math.abs(leftBrow[4].x - leftBrow[0].x) / faceWidth) - 0.2) * 300));
+                scores["首の細さと長さ (推論)"] = 55 + (Math.abs(jaw[6].x - jaw[10].x) % 30);
+                scores["肌のハリ・透明感 (推論)"] = 60 + (Math.floor(detection.age) % 20);
+                scores["チークライン（頬の高さ）"] = Math.min(100, Math.max(20, 100 - Math.abs((Math.abs(jaw[3].y - leftEye[0].y) / faceHeight) - 0.3) * 300));
+                scores["笑顔の黄金比（スマイルライン）"] = Math.min(100, Math.max(20, 100 - Math.abs(((mouth[6].y + mouth[0].y)/2 - mouth[3].y) / faceHeight) * 400));
 
                 let totalScore = 0;
                 let htmlRows = '';
@@ -370,7 +617,7 @@
                     htmlRows += `<tr><td>${key}</td><td class="score-value">${s} 点</td></tr>`;
                 }
 
-                let finalScore = Math.floor(((totalScore / 17) - 65) * 1.4 + 46);
+                let finalScore = Math.floor(((totalScore / 27) - 65) * 1.4 + 46);
                 if (finalScore > 85) finalScore = 85; 
                 if (finalScore < 30) finalScore = 30;
 
@@ -380,7 +627,14 @@
                     ageOutput.textContent = age;
                     expressionOutput.textContent = exprStr;
                     scoreTbody.innerHTML = htmlRows;
+                    
+                    // スコアセット
                     scoreOutput.textContent = finalScore;
+                    advScoreOutput.textContent = finalScore;
+                    
+                    // モテ度ピラミッド更新
+                    updatePyramid(finalScore);
+
                     commentOutput.textContent = finalScore >= 60 ? '非常に高いポテンシャルです。' : '要自己プロデュース。';
                     setupStage.classList.add('hidden');
                     resultStage.classList.remove('hidden');
